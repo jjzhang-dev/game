@@ -1,1594 +1,1096 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>暗黑丧尸生存 · 神装降临</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #0a0a0f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            font-family: 'Courier New', monospace;
-            touch-action: none;
-        }
-        #stage {
-            position: relative;
-            width: 450px;
-            height: 800px;
-            max-width: 100vw;
-            max-height: 100vh;
-            aspect-ratio: 9 / 16;
-            background: #000;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 0 30px #00e5ff55, 0 0 80px #b44bff33;
-            transform-origin: center center;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            touch-action: none;
-        }
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 14px;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            color: #fff;
-            text-shadow: 0 0 8px #00e5ff, 0 0 16px #00e5ff;
-        }
-        .hud-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-        .hud-left {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-        }
-        .hud-item {
-            background: #0a0f1a80;
-            padding: 2px 10px;
-            border-radius: 20px;
-            border: 1px solid #00e5ff55;
-            backdrop-filter: blur(4px);
-        }
-        #difficultyDisplay {
-            color: #ffb300;
-            text-shadow: 0 0 10px #ffb300;
-            font-weight: bold;
-        }
-        #hudHighScore {
-            color: #b44bff;
-            text-shadow: 0 0 10px #b44bff;
-        }
-        #killCount {
-            color: #ff4d6d;
-            text-shadow: 0 0 10px #ff4d6d;
-        }
-        .hp-wrap {
-            width: 100%;
-            height: 14px;
-            background: #ffffff18;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #ffffff22;
-            position: relative;
-        }
-        #hpBarFill {
-            height: 100%;
-            width: 100%;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #00ffb3 0%, #00e5ff 40%, #b44bff 100%);
-            transition: width 0.15s ease;
-            box-shadow: 0 0 12px #00e5ff88;
-        }
-        #bossBarWrap {
-            position: absolute;
-            top: 76px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 82%;
-            height: 16px;
-            background: #1a0a0a;
-            border: 2px solid #ff2e63;
-            border-radius: 8px;
-            overflow: hidden;
-            display: none;
-            z-index: 11;
-            box-shadow: 0 0 20px #ff2e6399, inset 0 0 10px #ff2e6344;
-        }
-        #bossBarFill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #ff2e63, #ff8a00, #ff2e63);
-            background-size: 200% 100%;
-            animation: bossPulse 1.2s linear infinite;
-            transition: width 0.1s ease;
-        }
-        @keyframes bossPulse {
-            0% { background-position: 0% 0; }
-            100% { background-position: 200% 0; }
-        }
-        #bossWarning {
-            position: absolute;
-            top: 46%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8);
-            font-size: 34px;
-            font-weight: bold;
-            color: #ff2e63;
-            text-shadow: 0 0 20px #ff2e63, 0 0 40px #ff2e63, 0 0 60px #ff0000;
-            letter-spacing: 6px;
-            display: none;
-            z-index: 20;
-            animation: warnFlash 0.5s ease-in-out infinite alternate;
-            white-space: nowrap;
-        }
-        @keyframes warnFlash {
-            from { opacity: 0.4; text-shadow: 0 0 10px #ff2e63; }
-            to { opacity: 1; text-shadow: 0 0 30px #ff2e63, 0 0 50px #ff0000; }
-        }
-        #superRewardText {
-            position: absolute;
-            top: 42%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.5);
-            font-size: 30px;
-            font-weight: bold;
-            color: #ffd700;
-            text-shadow: 0 0 20px #ffd700, 0 0 40px #ff8a00, 0 0 70px #ff0000;
-            letter-spacing: 4px;
-            display: none;
-            z-index: 25;
-            white-space: nowrap;
-            text-align: center;
-            pointer-events: none;
-        }
-        #buffWeapon, #buffSpeed {
-            position: absolute;
-            bottom: 150px;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 15px;
-            font-weight: bold;
-            display: none;
-            z-index: 12;
-            backdrop-filter: blur(4px);
-            letter-spacing: 1px;
-        }
-        #buffWeapon {
-            left: 18px;
-            background: #b44bff44;
-            border: 1px solid #b44bff;
-            color: #d9aaff;
-            text-shadow: 0 0 10px #b44bff;
-        }
-        #buffSpeed {
-            right: 18px;
-            background: #00e5ff44;
-            border: 1px solid #00e5ff;
-            color: #aaf4ff;
-            text-shadow: 0 0 10px #00e5ff;
-        }
-        #touchControls {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 15;
-            display: none;
-        }
-        #touchControls.active {
-            display: block;
-        }
-        #joystick {
-            position: absolute;
-            bottom: 70px;
-            left: 70px;
-            width: 130px;
-            height: 130px;
-            border-radius: 50%;
-            background: #ffffff12;
-            border: 2px solid #00e5ff55;
-            pointer-events: auto;
-            touch-action: none;
-            box-shadow: 0 0 20px #00e5ff33;
-        }
-        #joystickKnob {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #00e5ff, #0066aa);
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 18px #00e5ff;
-            pointer-events: none;
-        }
-        #fireButton {
-            position: absolute;
-            bottom: 90px;
-            right: 64px;
-            width: 96px;
-            height: 96px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #ff4d6d, #aa0033);
-            border: 2px solid #ff8fa3;
-            color: #fff;
-            font-size: 17px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            letter-spacing: 2px;
-            pointer-events: auto;
-            touch-action: none;
-            box-shadow: 0 0 24px #ff4d6d99;
-            text-shadow: 0 0 8px #fff;
-        }
-        #gameOverScreen {
-            position: absolute;
-            inset: 0;
-            background: #0a0a0fe6;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 30;
-            backdrop-filter: blur(6px);
-            gap: 16px;
-            padding: 30px;
-        }
-        #gameOverScreen h1 {
-            font-size: 42px;
-            color: #ff2e63;
-            text-shadow: 0 0 20px #ff2e63, 0 0 40px #ff2e63;
-            letter-spacing: 4px;
-            margin-bottom: 6px;
-        }
-        #gameOverScreen .score-line {
-            font-size: 20px;
-            color: #00e5ff;
-            text-shadow: 0 0 12px #00e5ff;
-        }
-        #gameOverScreen .score-line span {
-            color: #fff;
-            font-weight: bold;
-        }
-        #finalHighScore {
-            color: #ffd700 !important;
-            text-shadow: 0 0 14px #ffd700 !important;
-        }
-        #newRecordText {
-            color: #b44bff;
-            font-size: 18px;
-            text-shadow: 0 0 14px #b44bff;
-            display: none;
-            letter-spacing: 2px;
-        }
-        #restartBtn {
-            margin-top: 22px;
-            padding: 14px 52px;
-            font-size: 22px;
-            font-weight: bold;
-            color: #0a0a0f;
-            background: linear-gradient(90deg, #00ffb3, #00e5ff, #b44bff);
-            border: none;
-            border-radius: 40px;
-            letter-spacing: 4px;
-            cursor: pointer;
-            box-shadow: 0 0 24px #00e5ffaa;
-            transition: transform 0.1s;
-            touch-action: manipulation;
-        }
-        #restartBtn:active {
-            transform: scale(0.94);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>丧尸生存 · Zombie Survival</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    touch-action: none;
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #stage {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px; height: 800px;
+    max-width: 100vw;
+    max-height: 100vh;
+    aspect-ratio: 9 / 16;
+    background: #0a0d14;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0, 255, 200, 0.08), 0 0 120px rgba(255, 0, 80, 0.06);
+  }
+  @media (max-aspect-ratio: 9/16) {
+    #stage { width: 100vw; height: calc(100vw * 16 / 9); }
+  }
+  @media (min-aspect-ratio: 9/16) {
+    #stage { height: 100vh; width: calc(100vh * 9 / 16); }
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 10px 12px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  #hpBarWrap {
+    flex: 1;
+    height: 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(0,255,200,0.35);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+  }
+  #hpBarFill {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, #ff2d55, #ff9500, #00ffc8);
+    background-size: 200% 100%;
+    transition: width 0.15s linear;
+    box-shadow: 0 0 12px rgba(0,255,200,0.5);
+  }
+  #killCount {
+    font-size: 15px; font-weight: 700;
+    color: #00ffc8;
+    text-shadow: 0 0 8px rgba(0,255,200,0.8);
+    white-space: nowrap;
+  }
+  #difficultyDisplay {
+    font-size: 13px; font-weight: 700;
+    color: #ff9500;
+    text-shadow: 0 0 8px rgba(255,149,0,0.8);
+    white-space: nowrap;
+  }
+  #hudHighScore {
+    font-size: 12px; color: #8fa3b8;
+    text-shadow: 0 0 6px rgba(143,163,184,0.5);
+    white-space: nowrap;
+  }
+  .hud-sub { margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+  #buffRow { display: flex; gap: 8px; margin-top: 6px; }
+  .buff-icon {
+    font-size: 18px; opacity: 0; transform: scale(0.6);
+    transition: opacity 0.2s, transform 0.2s;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.7));
+  }
+  .buff-icon.on { opacity: 1; transform: scale(1); }
+
+  #bossBarWrap {
+    position: absolute; top: 78px; left: 50%;
+    transform: translateX(-50%);
+    width: 78%; height: 14px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,45,85,0.7);
+    border-radius: 7px;
+    overflow: hidden;
+    display: none;
+    z-index: 11;
+    box-shadow: 0 0 16px rgba(255,45,85,0.5);
+  }
+  #bossBarFill {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, #ff2d55, #ff6b00);
+    transition: width 0.1s linear;
+  }
+  #bossWarning {
+    position: absolute; top: 40%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    font-size: 34px; font-weight: 900;
+    color: #ff2d55;
+    text-shadow: 0 0 20px rgba(255,45,85,0.9), 0 0 40px rgba(255,45,85,0.6);
+    letter-spacing: 4px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 12;
+    white-space: nowrap;
+  }
+  #bossWarning.show { animation: warnPulse 1.6s ease-out forwards; }
+  @keyframes warnPulse {
+    0% { opacity: 0; transform: translate(-50%,-50%) scale(0.6); }
+    20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+    40% { transform: translate(-50%,-50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.2); }
+  }
+
+  #touchControls {
+    position: absolute; inset: 0;
+    display: none;
+    z-index: 20;
+    pointer-events: none;
+  }
+  #touchControls.active { display: block; }
+  #joystick {
+    position: absolute; left: 26px; bottom: 34px;
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,200,0.10), rgba(0,255,200,0.03));
+    border: 2px solid rgba(0,255,200,0.35);
+    pointer-events: auto;
+    box-shadow: 0 0 20px rgba(0,255,200,0.15);
+  }
+  #joystickKnob {
+    position: absolute; left: 50%; top: 50%;
+    width: 56px; height: 56px;
+    margin-left: -28px; margin-top: -28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,200,0.55), rgba(0,255,200,0.2));
+    border: 2px solid rgba(0,255,200,0.8);
+    box-shadow: 0 0 16px rgba(0,255,200,0.6);
+  }
+  #fireButton {
+    position: absolute; right: 30px; bottom: 44px;
+    width: 108px; height: 108px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,45,85,0.35), rgba(255,45,85,0.12));
+    border: 3px solid rgba(255,45,85,0.8);
+    color: #ff2d55;
+    font-size: 17px; font-weight: 900;
+    letter-spacing: 2px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: auto;
+    box-shadow: 0 0 24px rgba(255,45,85,0.4);
+    text-shadow: 0 0 10px rgba(255,45,85,0.9);
+  }
+  #fireButton:active { background: radial-gradient(circle, rgba(255,45,85,0.6), rgba(255,45,85,0.25)); }
+
+  #gameOverScreen {
+    position: absolute; inset: 0;
+    background: rgba(5,6,10,0.92);
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 30;
+    padding: 30px;
+    text-align: center;
+  }
+  #gameOverScreen.show { display: flex; }
+  #gameOverScreen h1 {
+    font-size: 40px; font-weight: 900;
+    color: #ff2d55;
+    text-shadow: 0 0 24px rgba(255,45,85,0.9);
+    letter-spacing: 6px;
+    margin-bottom: 26px;
+  }
+  .score-line {
+    font-size: 17px; color: #8fa3b8;
+    margin: 8px 0;
+    letter-spacing: 1px;
+  }
+  .score-line b {
+    color: #00ffc8;
+    font-size: 26px;
+    text-shadow: 0 0 14px rgba(0,255,200,0.8);
+    margin-left: 6px;
+  }
+  #finalHighScore { color: #ffd700; text-shadow: 0 0 14px rgba(255,215,0,0.8); }
+  #newRecordText {
+    font-size: 18px; font-weight: 800;
+    color: #ffd700;
+    text-shadow: 0 0 16px rgba(255,215,0,0.9);
+    margin: 14px 0;
+    display: none;
+    animation: blink 0.9s infinite alternate;
+  }
+  #newRecordText.show { display: block; }
+  @keyframes blink { from { opacity: 1; } to { opacity: 0.4; } }
+  #restartBtn {
+    margin-top: 30px;
+    padding: 15px 52px;
+    font-size: 20px; font-weight: 800;
+    letter-spacing: 3px;
+    color: #05060a;
+    background: linear-gradient(135deg, #00ffc8, #00b3ff);
+    border: none; border-radius: 40px;
+    box-shadow: 0 0 26px rgba(0,255,200,0.6);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  #restartBtn:active { transform: scale(0.96); }
+</style>
 </head>
 <body>
 <div id="stage">
-    <canvas id="gameCanvas" width="450" height="800"></canvas>
+  <canvas id="gameCanvas" width="450" height="800"></canvas>
 
-    <!-- HUD -->
-    <div id="hud">
-        <div class="hud-row">
-            <div class="hud-left">
-                <div class="hud-item" id="difficultyDisplay">Lv.1</div>
-                <div class="hud-item">击杀 <span id="killCount">0</span></div>
-            </div>
-            <div class="hud-item" id="hudHighScore">最高 0</div>
-        </div>
-        <div class="hp-wrap">
-            <div id="hpBarFill"></div>
-        </div>
+  <div id="hud">
+    <div class="hud-row">
+      <div id="hpBarWrap"><div id="hpBarFill"></div></div>
+      <div id="killCount">击杀 0</div>
     </div>
-
-    <!-- BOSS 血条 -->
-    <div id="bossBarWrap">
-        <div id="bossBarFill"></div>
+    <div class="hud-sub">
+      <div id="difficultyDisplay">难度 Lv.1</div>
+      <div id="hudHighScore">最高分 0</div>
     </div>
-    <div id="bossWarning">⚠ BOSS 降临 ⚠</div>
-
-    <!-- 击杀BOSS·神装大字提示 -->
-    <div id="superRewardText">BOSS击杀！<br>获得神装！</div>
-
-    <!-- 增益状态 -->
-    <div id="buffWeapon">🌟 三发散射</div>
-    <div id="buffSpeed">⚡ 加速</div>
-
-    <!-- 摇杆与射击键 -->
-    <div id="touchControls">
-        <div id="joystick">
-            <div id="joystickKnob"></div>
-        </div>
-        <div id="fireButton">FIRE</div>
+    <div id="buffRow">
+      <div class="buff-icon" id="buffWeapon">🌟</div>
+      <div class="buff-icon" id="buffSpeed">⚡</div>
     </div>
+  </div>
 
-    <!-- 结束界面 -->
-    <div id="gameOverScreen">
-        <h1>你被撕碎了</h1>
-        <div class="score-line">本局击杀 <span id="finalScore">0</span></div>
-        <div class="score-line">历史最高 <span id="finalHighScore">0</span></div>
-        <div id="newRecordText">✦ 新纪录 ✦</div>
-        <button id="restartBtn">重新开始</button>
-    </div>
+  <div id="bossBarWrap"><div id="bossBarFill"></div></div>
+  <div id="bossWarning">⚠ BOSS 来袭 ⚠</div>
+
+  <div id="touchControls">
+    <div id="joystick"><div id="joystickKnob"></div></div>
+    <div id="fireButton">FIRE</div>
+  </div>
+
+  <div id="gameOverScreen">
+    <h1>GAME OVER</h1>
+    <div class="score-line">本局得分<b id="finalScore">0</b></div>
+    <div class="score-line">最高分<b id="finalHighScore">0</b></div>
+    <div id="newRecordText">🎉 新纪录！</div>
+    <button id="restartBtn">重新开始</button>
+  </div>
 </div>
 
 <script>
-(function() {
-    'use strict';
+(function () {
+  'use strict';
 
-    // ==================== 常量配置 ====================
-    const W = 450, H = 800;
+  // ==================== 基础常量 ====================
+  const W = 450, H = 800;
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
 
-    const PLAYER_RADIUS = 18;
-    const ITEM_RADIUS = 15;
-    const PICKUP_DIST_SQ = (PLAYER_RADIUS + ITEM_RADIUS) * (PLAYER_RADIUS + ITEM_RADIUS);
+  const PLAYER_RADIUS = 18;
+  const ITEM_RADIUS = 15;
+  const PICKUP_DIST_SQ = (PLAYER_RADIUS + ITEM_RADIUS) * (PLAYER_RADIUS + ITEM_RADIUS);
 
-    const BASE_SPEED = 4.5;
-    const SHOT_CD = 180;
-    const SHOT_CD_BUFF = 110;
-    const WEAPON_BUFF_DUR = 10000;
-    const SPEED_BUFF_DUR = 5000;
-    const SPEED_BUFF_MUL = 1.7;
-    const HEAL_AMOUNT = 20;
+  const BASE_SPEED = 4.5;
+  const SPEED_BUFF_MUL = 1.7;
+  const SPEED_BUFF_DUR = 5000;
 
-    // 神装狂暴状态
-    const RAGE_DURATION = 10000;
-    const RAGE_SHOT_CD = 90;
+  const SHOT_CD = 180;
+  const SHOT_CD_BUFF = 110;
+  const WEAPON_BUFF_DUR = 10000;
 
-    // BOSS
-    const BOSS_MAX_HP = 50;
-    const BOSS_RADIUS = 48;
-    const BOSS_SPEED = 0.55;
-    const BOSS_SHOOT_INTERVAL = 1800;
+  const HEAL_AMOUNT = 20;
 
-    // 宝箱
-    const CHEST_RADIUS = 30;
-    const CHEST_PICKUP_DIST_SQ = (PLAYER_RADIUS + CHEST_RADIUS) * (PLAYER_RADIUS + CHEST_RADIUS);
+  const BOSS_MAX_HP = 50;
+  const BOSS_RADIUS = 48;
+  const BOSS_SPEED = 0.55;
+  const BOSS_SHOOT_INTERVAL = 1800;
 
-    // ==================== 画布 ====================
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+  const HIGHSCORE_KEY = 'zombie_survival_highscore';
 
-    // ==================== DOM ====================
-    const hpBarFill = document.getElementById('hpBarFill');
-    const killCountEl = document.getElementById('killCount');
-    const difficultyDisplay = document.getElementById('difficultyDisplay');
-    const hudHighScore = document.getElementById('hudHighScore');
-    const bossBarWrap = document.getElementById('bossBarWrap');
-    const bossBarFill = document.getElementById('bossBarFill');
-    const bossWarning = document.getElementById('bossWarning');
-    const superRewardText = document.getElementById('superRewardText');
-    const buffWeapon = document.getElementById('buffWeapon');
-    const buffSpeed = document.getElementById('buffSpeed');
-    const touchControls = document.getElementById('touchControls');
-    const joystick = document.getElementById('joystick');
-    const joystickKnob = document.getElementById('joystickKnob');
-    const fireButton = document.getElementById('fireButton');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const finalScore = document.getElementById('finalScore');
-    const finalHighScore = document.getElementById('finalHighScore');
-    const newRecordText = document.getElementById('newRecordText');
-    const restartBtn = document.getElementById('restartBtn');
-    const stage = document.getElementById('stage');
+  // ==================== 游戏状态 ====================
+  let running = false;
+  let gameTime = 0;
+  let kills = 0;
+  let difficultyLevel = 1;
+  let speedMultiplier = 1;
+  let spawnInterval = 1200;
+  let spawnTimer = 0;
+  let lastTimeLevel = 0;
+  let lastKillLevel = 0;
+  let bossSpawned = false;
+  let boss = null;
+  let bossShootTimer = 0;
+  let highScore = 0;
 
-    // ==================== 状态 ====================
-    let running = false;
-    let gameTime = 0;
-    let kills = 0;
-    let lastTime = 0;
-    let spawnTimer = 0;
-    let spawnInterval = 1600;
-    let speedMultiplier = 1;
+  let player = null;
+  let zombies = [];
+  let bullets = [];
+  let bossBullets = [];
+  let items = [];
+  let particles = [];
+  let floatTexts = [];
 
-    const player = {
-        x: W / 2,
-        y: H / 2,
-        hp: 100,
-        maxHp: 100,
-        lastShot: 0
-    };
+  let aimAngle = -Math.PI / 2;
+  let shotTimer = 0;
+  let weaponBuffTimer = 0;
+  let speedBuffTimer = 0;
 
-    let aimAngle = -Math.PI / 2;
-    let mouseX = W / 2, mouseY = H / 2;
+  let fireActive = false;
+  const keys = {};
 
-    let zombies = [];
-    let bullets = [];
-    let items = [];
-    let particles = [];
-    let floatTexts = [];
-    let bossBullets = [];
+  let joyId = null;
+  let fireId = null;
+  let joyVec = { x: 0, y: 0 };
+  let restartLock = false;
 
-    let boss = null;
-    let bossSpawned = false;
-    let chest = null;
+  // ==================== 音效 ====================
+  let audioCtx = null;
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { audioCtx = null; }
+  }
+  function beep(freq, dur, type, vol) {
+    if (!audioCtx) return;
+    try {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.value = vol == null ? 0.06 : vol;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime;
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function playShoot() { beep(680, 0.06, 'square', 0.05); }
+  function playZombieDeath() { beep(160, 0.14, 'sawtooth', 0.06); }
+  function playPickup() { beep(880, 0.08, 'sine', 0.08); setTimeout(() => beep(1180, 0.08, 'sine', 0.07), 70); }
+  function playLevelUp() { beep(520, 0.1, 'triangle', 0.08); setTimeout(() => beep(780, 0.14, 'triangle', 0.08), 100); }
+  function playBuff() { beep(1000, 0.07, 'sine', 0.07); setTimeout(() => beep(1400, 0.1, 'sine', 0.06), 60); }
+  function playBossShoot() { beep(220, 0.12, 'sawtooth', 0.07); }
+  function playBossHurt() { beep(300, 0.05, 'square', 0.05); }
+  function playBossDie() {
+    beep(200, 0.2, 'sawtooth', 0.09);
+    setTimeout(() => beep(140, 0.3, 'sawtooth', 0.09), 160);
+    setTimeout(() => beep(90, 0.5, 'sawtooth', 0.09), 380);
+  }
+  function playBossWarning() {
+    beep(180, 0.25, 'sawtooth', 0.08);
+    setTimeout(() => beep(180, 0.25, 'sawtooth', 0.08), 320);
+  }
 
-    let lastTimeLevel = 0;
-    let lastKillLevel = 0;
-    let difficultyLevel = 1;
+  // ==================== 工具 ====================
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function distSq(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
 
-    let weaponBuffTimer = 0;
-    let speedBuffTimer = 0;
-    let rageTimer = 0;
-
-    let keys = {};
-    let joyActive = false;
-    let joyId = null;
-    let joyDX = 0, joyDY = 0;
-    let fireActive = false;
-    let fireId = null;
-    let restartLock = false;
-
-    let audioCtx = null;
-
-    // ==================== 音效 ====================
-    function initAudio() {
-        if (!audioCtx) {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) { audioCtx = null; }
-        }
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  function addFloatText(x, y, text, color) {
+    floatTexts.push({ x, y, text, color: color || '#fff', life: 1, vy: -0.8 });
+  }
+  function addParticles(x, y, color, count) {
+    for (let i = 0; i < (count || 8); i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = rand(1, 4);
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1,
+        color: color || '#ff2d55',
+        size: rand(2, 5)
+      });
     }
-    function beep(freq, dur, type, vol) {
-        if (!audioCtx) return;
-        try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type || 'square';
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(vol || 0.06, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + dur);
-        } catch (e) {}
-    }
-    function playShoot() { beep(720, 0.06, 'square', 0.04); }
-    function playZombieDeath() { beep(180, 0.12, 'sawtooth', 0.07); }
-    function playPickup() { beep(880, 0.1, 'sine', 0.09); setTimeout(() => beep(1180, 0.1, 'sine', 0.09), 70); }
-    function playLevelUp() { beep(520, 0.1, 'square', 0.07); setTimeout(() => beep(780, 0.12, 'square', 0.07), 90); }
-    function playBuff() { beep(1000, 0.08, 'sine', 0.08); setTimeout(() => beep(1400, 0.1, 'sine', 0.08), 80); }
-    function playBossShoot() { beep(120, 0.18, 'sawtooth', 0.1); }
-    function playBossHurt() { beep(300, 0.06, 'square', 0.06); }
-    function playBossDie() {
-        beep(200, 0.2, 'sawtooth', 0.12);
-        setTimeout(() => beep(140, 0.3, 'sawtooth', 0.12), 160);
-        setTimeout(() => beep(80, 0.5, 'sawtooth', 0.14), 360);
-    }
-    function playBossWarning() {
-        beep(160, 0.3, 'sawtooth', 0.1);
-        setTimeout(() => beep(120, 0.4, 'sawtooth', 0.1), 280);
-    }
-    function playSuperReward() {
-        beep(660, 0.12, 'sine', 0.1);
-        setTimeout(() => beep(880, 0.12, 'sine', 0.1), 110);
-        setTimeout(() => beep(1320, 0.2, 'sine', 0.12), 230);
-        setTimeout(() => beep(1760, 0.3, 'sine', 0.1), 380);
-    }
+  }
 
-    // ==================== 工具 ====================
-    function rand(a, b) { return a + Math.random() * (b - a); }
-    function distSq(ax, ay, bx, by) {
-        const dx = ax - bx, dy = ay - by;
-        return dx * dx + dy * dy;
-    }
-    function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  // ==================== 初始化 / 重置 ====================
+  function resetGame() {
+    running = true;
+    gameTime = 0;
+    kills = 0;
+    difficultyLevel = 1;
+    speedMultiplier = 1;
+    spawnInterval = 1200;
+    spawnTimer = 0;
+    lastTimeLevel = 0;
+    lastKillLevel = 0;
+    bossSpawned = false;
+    boss = null;
+    bossShootTimer = 0;
 
-    // ==================== 最高分 ====================
-    const HS_KEY = 'zombie_survival_highscore';
-    let highScore = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
-    if (isNaN(highScore)) highScore = 0;
-    hudHighScore.textContent = '最高 ' + highScore;
+    player = { x: W / 2, y: H / 2, hp: 100, maxHp: 100 };
 
-    // ==================== 生成 ====================
-    function spawnZombie() {
-        const side = Math.floor(Math.random() * 4);
-        let x, y;
-        const m = 40;
-        if (side === 0) { x = rand(0, W); y = -m; }
-        else if (side === 1) { x = W + m; y = rand(0, H); }
-        else if (side === 2) { x = rand(0, W); y = H + m; }
-        else { x = -m; y = rand(0, H); }
+    zombies = [];
+    bullets = [];
+    bossBullets = [];
+    items = [];
+    particles = [];
+    floatTexts = [];
 
-        zombies.push({
-            x, y,
-            radius: 16,
-            hp: 1,
-            maxHp: 1,
-            speed: (0.9 + Math.random() * 0.6) * speedMultiplier,
-            wobble: Math.random() * Math.PI * 2
-        });
-    }
+    aimAngle = -Math.PI / 2;
+    shotTimer = 0;
+    weaponBuffTimer = 0;
+    speedBuffTimer = 0;
+    fireActive = false;
+    joyVec = { x: 0, y: 0 };
 
-    function spawnBoss() {
-        if (boss || bossSpawned) return;
-        bossSpawned = true;
-        boss = {
-            x: W / 2,
-            y: -80,
-            radius: BOSS_RADIUS,
-            hp: BOSS_MAX_HP,
-            maxHp: BOSS_MAX_HP,
-            speed: BOSS_SPEED,
-            shootTimer: 0,
-            hitFlash: 0
-        };
-        bossBarWrap.style.display = 'block';
-        bossBarFill.style.width = '100%';
-        bossWarning.style.display = 'block';
-        playBossWarning();
-        setTimeout(() => { bossWarning.style.display = 'none'; }, 2200);
-    }
+    for (let i = 0; i < 3; i++) spawnZombie();
 
-    function increaseDifficulty() {
-        difficultyLevel++;
-        speedMultiplier += 0.10;
-        spawnInterval = Math.max(350, spawnInterval * 0.90);
-        difficultyDisplay.textContent = 'Lv.' + difficultyLevel;
-        playLevelUp();
-        addFloatText(W / 2, H / 2 - 60, '难度提升 Lv.' + difficultyLevel, '#ffb300');
-        if (difficultyLevel >= 5) spawnBoss();
-    }
+    document.getElementById('gameOverScreen').classList.remove('show');
+    document.getElementById('bossBarWrap').style.display = 'none';
+    document.getElementById('buffWeapon').classList.remove('on');
+    document.getElementById('buffSpeed').classList.remove('on');
 
-    // ==================== 飘字 ====================
-    function addFloatText(x, y, text, color) {
-        floatTexts.push({ x, y, text, color: color || '#fff', life: 1, maxLife: 1, vy: -0.8 });
-    }
-
-    // ==================== 粒子 ====================
-    function burst(x, y, color, n) {
-        for (let i = 0; i < (n || 8); i++) {
-            const a = Math.random() * Math.PI * 2;
-            const sp = rand(1, 4);
-            particles.push({
-                x, y,
-                vx: Math.cos(a) * sp,
-                vy: Math.sin(a) * sp,
-                life: 1, maxLife: 1,
-                color: color || '#ffcc00',
-                size: rand(2, 5)
-            });
-        }
-    }
-
-    // ==================== 掉落 ====================
-    function tryDrop(x, y) {
-        if (Math.random() < 0.15) {
-            const r = Math.random();
-            let type;
-            if (r < 0.4) type = 'heart';
-            else if (r < 0.7) type = 'lightning';
-            else type = 'star';
-            items.push({ x, y, type, radius: ITEM_RADIUS, life: 12000, bob: Math.random() * Math.PI * 2 });
-        }
-    }
-
-    function pickupItem(item) {
-        if (item.type === 'heart') {
-            player.hp = Math.min(player.hp + HEAL_AMOUNT, player.maxHp);
-            addFloatText(item.x, item.y - 10, '+' + HEAL_AMOUNT + ' HP', '#00ffb3');
-            playPickup();
-        } else if (item.type === 'lightning') {
-            speedBuffTimer = SPEED_BUFF_DUR;
-            addFloatText(item.x, item.y - 10, '⚡ 加速!', '#00e5ff');
-            playBuff();
-        } else if (item.type === 'star') {
-            weaponBuffTimer = WEAPON_BUFF_DUR;
-            addFloatText(item.x, item.y - 10, '🌟 三发!', '#b44bff');
-            playBuff();
-        }
-        burst(item.x, item.y, '#ffffff', 6);
-    }
-
-    // ==================== 拾取宝箱（超级奖励）====================
-    function pickupChest(c) {
-        if (!c) return;
-
-        // 1) 回满血
-        player.hp = player.maxHp;
-        // 2) 10秒狂暴
-        rageTimer = RAGE_DURATION;
-        // 3) 武器 buff 同步刷新，保证狂暴期间三发
-        weaponBuffTimer = Math.max(weaponBuffTimer, RAGE_DURATION);
-
-        // 特效
-        burst(c.x, c.y, '#ffd700', 40);
-        burst(c.x, c.y, '#ff2e63', 24);
-        burst(player.x, player.y, '#ffd700', 20);
-
-        showSuperReward();
-        playSuperReward();
-        addFloatText(player.x, player.y - 40, '满血 + 狂暴 10s!', '#ffd700');
-    }
-
-    function showSuperReward() {
-        superRewardText.style.display = 'block';
-        superRewardText.style.opacity = '1';
-        // 重启动画
-        superRewardText.style.animation = 'none';
-        void superRewardText.offsetWidth;
-        superRewardText.style.animation = 'superPop 0.6s cubic-bezier(0.2, 1.6, 0.5, 1) forwards';
-
-        setTimeout(() => {
-            superRewardText.style.transition = 'opacity 0.6s';
-            superRewardText.style.opacity = '0';
-            setTimeout(() => {
-                superRewardText.style.display = 'none';
-                superRewardText.style.opacity = '1';
-                superRewardText.style.transition = '';
-            }, 620);
-        }, 1700);
-    }
-
-    // ==================== 射击 ====================
-    function tryShoot() {
-        const now = performance.now();
-        let cd = SHOT_CD;
-        if (rageTimer > 0) cd = RAGE_SHOT_CD;
-        else if (weaponBuffTimer > 0) cd = SHOT_CD_BUFF;
-
-        if (now - player.lastShot < cd) return;
-        player.lastShot = now;
-
-        // 瞄准：优先 BOSS
-        let targetX = mouseX, targetY = mouseY;
-        if (boss) {
-            targetX = boss.x; targetY = boss.y;
-        } else {
-            let nearest = null, nd = Infinity;
-            for (const z of zombies) {
-                const d = distSq(player.x, player.y, z.x, z.y);
-                if (d < nd) { nd = d; nearest = z; }
-            }
-            if (nearest) { targetX = nearest.x; targetY = nearest.y; }
-        }
-        const baseAngle = Math.atan2(targetY - player.y, targetX - player.x);
-        aimAngle = baseAngle;
-
-        const useTriple = (rageTimer > 0) || (weaponBuffTimer > 0);
-        const spread = 0.24;
-
-        if (useTriple) {
-            for (let k = -1; k <= 1; k++) {
-                const a = baseAngle + k * spread;
-                bullets.push({
-                    x: player.x + Math.cos(a) * 22,
-                    y: player.y + Math.sin(a) * 22,
-                    vx: Math.cos(a) * 12,
-                    vy: Math.sin(a) * 12,
-                    radius: 4,
-                    life: 3
-                });
-            }
-        } else {
-            bullets.push({
-                x: player.x + Math.cos(baseAngle) * 22,
-                y: player.y + Math.sin(baseAngle) * 22,
-                vx: Math.cos(baseAngle) * 12,
-                vy: Math.sin(baseAngle) * 12,
-                radius: 4,
-                life: 3
-            });
-        }
-        playShoot();
-    }
-
-    // ==================== 击杀 BOSS（核心修复点）====================
-    function killBoss() {
-        if (!boss) return;
-
-        // 先保存坐标，再置空 boss，杜绝空引用
-        const bx = boss.x;
-        const by = boss.y;
-
-        boss = null;
-        bossBarWrap.style.display = 'none';
-
-        // 大爆炸
-        burst(bx, by, '#ff2e63', 40);
-        burst(bx, by, '#ff8a00', 30);
-        burst(bx, by, '#ffd700', 24);
-        playBossDie();
-
-        // 奖励击杀数
-        kills += 10;
-        killCountEl.textContent = kills;
-
-        // 清空 BOSS 弹幕
-        bossBullets = [];
-
-        // ===== 生成金色宝箱（多重保险）=====
-        let cx = W / 2, cy = H / 2;
-        const ang = Math.random() * Math.PI * 2;
-        const dist = rand(100, 150);
-        cx = player.x + Math.cos(ang) * dist;
-        cy = player.y + Math.sin(ang) * dist;
-
-        // 边界钳制
-        cx = clamp(cx, CHEST_RADIUS + 20, W - CHEST_RADIUS - 20);
-        cy = clamp(cy, CHEST_RADIUS + 20, H - CHEST_RADIUS - 20);
-
-        // 距玩家太近则改用地图中央
-        if (distSq(cx, cy, player.x, player.y) < 80 * 80) {
-            cx = W / 2;
-            cy = H / 2;
-        }
-
-        // 强制生成宝箱对象（常驻）
-        chest = {
-            x: cx,
-            y: cy,
-            radius: CHEST_RADIUS,
-            bob: 0,
-            life: 999999,
-            spawnTime: performance.now()
-        };
-
-        console.log('[宝箱] 已生成于', cx.toFixed(0), cy.toFixed(0));
-
-        addFloatText(cx, cy - 50, '金色宝箱出现!', '#ffd700');
-        playPickup();
-
-        // 玩家残血保险
-        if (player.hp <= 0) player.hp = 1;
-    }
-
-    // ==================== 更新 ====================
-    function update(dt) {
-        const dts = dt / 16.6667;
-        gameTime += dt;
-
-        // 难度里程碑
-        const timeLevel = Math.floor(gameTime / 30000);
-        if (timeLevel > lastTimeLevel) {
-            lastTimeLevel = timeLevel;
-            increaseDifficulty();
-        }
-        const killLevel = Math.floor(kills / 20);
-        if (killLevel > lastKillLevel) {
-            lastKillLevel = killLevel;
-            increaseDifficulty();
-        }
-
-        // 增益计时
-        if (weaponBuffTimer > 0) weaponBuffTimer -= dt;
-        if (speedBuffTimer > 0) speedBuffTimer -= dt;
-        if (rageTimer > 0) rageTimer -= dt;
-
-        // 玩家移动
-        let mvx = 0, mvy = 0;
-        if (keys['w'] || keys['arrowup']) mvy -= 1;
-        if (keys['s'] || keys['arrowdown']) mvy += 1;
-        if (keys['a'] || keys['arrowleft']) mvx -= 1;
-        if (keys['d'] || keys['arrowright']) mvx += 1;
-        if (joyActive && (Math.abs(joyDX) > 0.08 || Math.abs(joyDY) > 0.08)) {
-            mvx = joyDX;
-            mvy = joyDY;
-        }
-        const ml = Math.hypot(mvx, mvy);
-        if (ml > 0) {
-            mvx /= ml; mvy /= ml;
-            let sp = BASE_SPEED;
-            if (speedBuffTimer > 0) sp *= SPEED_BUFF_MUL;
-            if (rageTimer > 0) sp *= 1.25;
-            player.x += mvx * sp * dts;
-            player.y += mvy * sp * dts;
-        }
-        player.x = clamp(player.x, PLAYER_RADIUS, W - PLAYER_RADIUS);
-        player.y = clamp(player.y, PLAYER_RADIUS, H - PLAYER_RADIUS);
-
-        // 瞄准（无 BOSS 且鼠标操作时）
-        if (!boss) {
-            aimAngle = Math.atan2(mouseY - player.y, mouseX - player.x);
-        }
-
-        // 开火
-        if ((fireActive || keys[' ']) && !(player.hp <= 0)) {
-            tryShoot();
-        }
-
-        // 刷怪
-        if (!boss) {
-            spawnTimer += dt;
-            if (spawnTimer >= spawnInterval) {
-                spawnTimer = 0;
-                spawnZombie();
-            }
-        } else {
-            spawnTimer += dt;
-            if (spawnTimer >= spawnInterval * 2) {
-                spawnTimer = 0;
-                spawnZombie();
-            }
-        }
-
-        // 普通丧尸更新
-        const safeR = PLAYER_RADIUS + 12;
-        for (let i = zombies.length - 1; i >= 0; i--) {
-            const z = zombies[i];
-            const dx = player.x - z.x, dy = player.y - z.y;
-            const d = Math.hypot(dx, dy) || 1;
-            z.wobble += 0.1;
-            const wob = Math.sin(z.wobble) * 0.4;
-            z.x += (dx / d) * z.speed * dts + wob * 0.3;
-            z.y += (dy / d) * z.speed * dts;
-
-            if (d < safeR) {
-                player.hp -= 0.6 * dts;
-            }
-        }
-
-        // BOSS 更新
-        if (boss) {
-            const dx = player.x - boss.x, dy = player.y - boss.y;
-            const d = Math.hypot(dx, dy) || 1;
-            boss.y += (dy / d) * boss.speed * dts;
-if (boss.hitFlash > 0) boss.hitFlash -= dt;
-                   // BOSS 射击
-        boss.shootTimer += dt;
-        if (boss.shootTimer >= BOSS_SHOOT_INTERVAL) {
-            boss.shootTimer = 0;
-            const a = Math.atan2(player.y - boss.y, player.x - boss.x);
-            bossBullets.push({
-                x: boss.x + Math.cos(a) * (BOSS_RADIUS + 6),
-                y: boss.y + Math.sin(a) * (BOSS_RADIUS + 6),
-                vx: Math.cos(a) * 2.6,
-                vy: Math.sin(a) * 2.6,
-                radius: 9,
-                life: 6
-            });
-            playBossShoot();
-        }
-
-        // 贴身伤害
-        if (d < PLAYER_RADIUS + BOSS_RADIUS - 6) {
-            player.hp -= 1.2 * dts;
-        }
-    }
-
-    // 玩家子弹更新
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        b.x += b.vx * dts;
-        b.y += b.vy * dts;
-        b.life -= dt;
-        if (b.life <= 0 || b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
-            bullets.splice(i, 1);
-            continue;
-        }
-
-        let hit = false;
-
-        // 打 BOSS
-        if (boss && !hit) {
-            const rr = (b.radius + boss.radius) * (b.radius + boss.radius);
-            if (distSq(b.x, b.y, boss.x, boss.y) < rr) {
-                boss.hp -= 1;
-                boss.hitFlash = 120;
-                burst(b.x, b.y, '#ff8a00', 5);
-                playBossHurt();
-                bullets.splice(i, 1);
-                hit = true;
-
-                if (boss.hp <= 0) {
-                    killBoss();   // 内部生成宝箱
-                }
-            }
-        }
-
-        // 打普通丧尸
-        if (!hit) {
-            for (let j = zombies.length - 1; j >= 0; j--) {
-                const z = zombies[j];
-                const rr = (b.radius + z.radius) * (b.radius + z.radius);
-                if (distSq(b.x, b.y, z.x, z.y) < rr) {
-                    z.hp -= 1;
-                    if (z.hp <= 0) {
-                        zombies.splice(j, 1);
-                        kills++;
-                        killCountEl.textContent = kills;
-                        playZombieDeath();
-                        burst(z.x, z.y, '#7fd66a', 8);
-                        tryDrop(z.x, z.y);
-                    }
-                    bullets.splice(i, 1);
-                    hit = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    // BOSS 子弹更新
-    for (let i = bossBullets.length - 1; i >= 0; i--) {
-        const b = bossBullets[i];
-        b.x += b.vx * dts;
-        b.y += b.vy * dts;
-        b.life -= dt;
-        if (b.life <= 0 || b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30) {
-            bossBullets.splice(i, 1);
-            continue;
-        }
-        const rr = (b.radius + PLAYER_RADIUS * 0.8) * (b.radius + PLAYER_RADIUS * 0.8);
-        if (distSq(b.x, b.y, player.x, player.y) < rr) {
-            player.hp -= 12;
-            burst(b.x, b.y, '#ff2e63', 10);
-            bossBullets.splice(i, 1);
-        }
-    }
-
-    // 道具更新与拾取
-    for (let i = items.length - 1; i >= 0; i--) {
-        const it = items[i];
-        it.life -= dt;
-        it.bob += 0.12;
-        if (it.life <= 0) { items.splice(i, 1); continue; }
-
-        if (distSq(player.x, player.y, it.x, it.y) < PICKUP_DIST_SQ) {
-            pickupItem(it);
-            items.splice(i, 1);
-        }
-    }
-
-    // 宝箱更新与拾取（核心修复点）
-    if (chest) {
-        chest.bob += 0.08;
-
-        const cd2 = distSq(player.x, player.y, chest.x, chest.y);
-        if (cd2 < CHEST_PICKUP_DIST_SQ) {
-            pickupChest(chest);
-            chest = null;   // 立即清除，防止重复触发
-        }
-    }
-
-    // 粒子更新
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx * dts;
-        p.y += p.vy * dts;
-        p.vx *= 0.96;
-        p.vy *= 0.96;
-        p.life -= dt;
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-
-    // 飘字更新
-    for (let i = floatTexts.length - 1; i >= 0; i--) {
-        const f = floatTexts[i];
-        f.y += f.vy * dts;
-        f.life -= dt;
-        if (f.life <= 0) floatTexts.splice(i, 1);
-    }
-
-    // HUD
+    highScore = parseInt(localStorage.getItem(HIGHSCORE_KEY) || '0', 10) || 0;
     updateHUD();
+  }
 
-    // 死亡判定
-    if (player.hp <= 0 && running) {
-        player.hp = 0;
-        gameOver();
+  // ==================== 丧尸 ====================
+  function spawnZombie() {
+    let x, y, tries = 0;
+    do {
+      const edge = Math.floor(Math.random() * 4);
+      if (edge === 0) { x = rand(0, W); y = -30; }
+      else if (edge === 1) { x = W + 30; y = rand(0, H); }
+      else if (edge === 2) { x = rand(0, W); y = H + 30; }
+      else { x = -30; y = rand(0, H); }
+      tries++;
+    } while (distSq(x, y, player.x, player.y) < 200 * 200 && tries < 10);
+
+    zombies.push({
+      x, y,
+      radius: 16,
+      speed: (0.9 + Math.random() * 0.6) * speedMultiplier,
+      hp: 1,
+      wobble: Math.random() * Math.PI * 2
+    });
+  }
+
+  function spawnBoss() {
+    boss = {
+      x: W / 2, y: -80,
+      radius: BOSS_RADIUS,
+      hp: BOSS_MAX_HP,
+      maxHp: BOSS_MAX_HP,
+      speed: BOSS_SPEED,
+      wobble: 0
+    };
+    bossShootTimer = 0;
+    document.getElementById('bossBarWrap').style.display = 'block';
+    document.getElementById('bossBarFill').style.width = '100%';
+
+    const warn = document.getElementById('bossWarning');
+    warn.classList.remove('show');
+    void warn.offsetWidth;
+    warn.classList.add('show');
+    playBossWarning();
+  }
+
+  function increaseDifficulty() {
+    difficultyLevel++;
+    speedMultiplier += 0.10;
+    spawnInterval = Math.max(350, spawnInterval * 0.90);
+    playLevelUp();
+    addFloatText(W / 2, 120, '难度提升 Lv.' + difficultyLevel, '#ff9500');
+
+    if (difficultyLevel >= 5 && !bossSpawned) {
+      bossSpawned = true;
+      spawnBoss();
     }
-}
+  }
 
-// ==================== HUD ====================
-function updateHUD() {
-    const hpPct = clamp(player.hp / player.maxHp, 0, 1) * 100;
-    hpBarFill.style.width = hpPct + '%';
+  // ==================== 射击 ====================
+  function tryShoot() {
+    if (!running) return;
+    if (player.hp <= 0) return;
+    if (shotTimer > 0) return;
+
+    const cd = weaponBuffTimer > 0 ? SHOT_CD_BUFF : SHOT_CD;
+    shotTimer = cd;
+
+    let target = null, bestD = Infinity;
+    if (boss) {
+      target = boss;
+    } else {
+      for (let i = 0; i < zombies.length; i++) {
+        const d = distSq(zombies[i].x, zombies[i].y, player.x, player.y);
+        if (d < bestD) { bestD = d; target = zombies[i]; }
+      }
+    }
+    if (target) {
+      aimAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    }
+
+    const speed = 11;
+    const spread = 0.16;
+
+    if (weaponBuffTimer > 0) {
+      for (let k = -1; k <= 1; k++) {
+        const a = aimAngle + k * spread;
+        bullets.push({
+          x: player.x + Math.cos(a) * PLAYER_RADIUS,
+          y: player.y + Math.sin(a) * PLAYER_RADIUS,
+          vx: Math.cos(a) * speed,
+          vy: Math.sin(a) * speed,
+          radius: 4, life: 2
+        });
+      }
+    } else {
+      bullets.push({
+        x: player.x + Math.cos(aimAngle) * PLAYER_RADIUS,
+        y: player.y + Math.sin(aimAngle) * PLAYER_RADIUS,
+        vx: Math.cos(aimAngle) * speed,
+        vy: Math.sin(aimAngle) * speed,
+        radius: 4, life: 2
+      });
+    }
+    playShoot();
+  }
+
+  // ==================== 掉落 ====================
+  function tryDrop(x, y) {
+    if (Math.random() >= 0.15) return;
+    const r = Math.random();
+    let type;
+    if (r < 0.4) type = 'heart';
+    else if (r < 0.7) type = 'lightning';
+    else type = 'star';
+
+    items.push({
+      x, y, type,
+      radius: ITEM_RADIUS,
+      life: 12,
+      bob: Math.random() * Math.PI * 2
+    });
+  }
+
+  function pickupItem(item) {
+    if (item.type === 'heart') {
+      player.hp = Math.min(player.hp + HEAL_AMOUNT, player.maxHp);
+      addFloatText(item.x, item.y, '+' + HEAL_AMOUNT + ' HP', '#ff2d55');
+      playPickup();
+    } else if (item.type === 'lightning') {
+      speedBuffTimer = SPEED_BUFF_DUR;
+      addFloatText(item.x, item.y, '加速!', '#00b3ff');
+      playBuff();
+    } else if (item.type === 'star') {
+      weaponBuffTimer = WEAPON_BUFF_DUR;
+      addFloatText(item.x, item.y, '武器升级!', '#ffd700');
+      playBuff();
+    }
+    addParticles(item.x, item.y, '#00ffc8', 10);
+  }
+
+  // ==================== BOSS 击杀 ====================
+  function killBoss() {
+    if (!boss) return;
+    const bx = boss.x, by = boss.y;
+    boss = null;
+    bossBullets = [];
+    kills += 10;
+    document.getElementById('bossBarWrap').style.display = 'none';
+    addParticles(bx, by, '#ff2d55', 40);
+    addParticles(bx, by, '#ffd700', 30);
+    addFloatText(bx, by, 'BOSS 击杀!', '#ffd700');
+    playBossDie();
+  }
+
+  // ==================== 更新 ====================
+  function update(dt) {
+    if (!running) return;
+
+    gameTime += dt;
+
+    const timeLevel = Math.floor(gameTime / 30000);
+    if (timeLevel > lastTimeLevel) {
+      lastTimeLevel = timeLevel;
+      increaseDifficulty();
+    }
+    const killLevel = Math.floor(kills / 20);
+    if (killLevel > lastKillLevel) {
+      lastKillLevel = killLevel;
+      increaseDifficulty();
+    }
+
+    if (shotTimer > 0) shotTimer -= dt;
+    if (weaponBuffTimer > 0) weaponBuffTimer -= dt;
+    if (speedBuffTimer > 0) speedBuffTimer -= dt;
+
+    let mx = 0, my = 0;
+    if (keys['w'] || keys['arrowup']) my -= 1;
+    if (keys['s'] || keys['arrowdown']) my += 1;
+    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['d'] || keys['arrowright']) mx += 1;
+    mx += joyVec.x;
+    my += joyVec.y;
+
+    const mag = Math.hypot(mx, my);
+    if (mag > 1) { mx /= mag; my /= mag; }
+
+    const spd = BASE_SPEED * (speedBuffTimer > 0 ? SPEED_BUFF_MUL : 1);
+    player.x += mx * spd;
+    player.y += my * spd;
+    player.x = Math.max(PLAYER_RADIUS, Math.min(W - PLAYER_RADIUS, player.x));
+    player.y = Math.max(PLAYER_RADIUS, Math.min(H - PLAYER_RADIUS, player.y));
+
+    if (fireActive || keys[' ']) tryShoot();
+
+    spawnTimer += dt;
+    if (spawnTimer >= spawnInterval) {
+      spawnTimer = 0;
+      spawnZombie();
+    }
+
+    for (let i = zombies.length - 1; i >= 0; i--) {
+      const z = zombies[i];
+      const dx = player.x - z.x, dy = player.y - z.y;
+      const d = Math.hypot(dx, dy) || 1;
+      z.x += (dx / d) * z.speed;
+      z.y += (dy / d) * z.speed;
+      z.wobble += 0.15;
+
+      if (distSq(z.x, z.y, player.x, player.y) < (z.radius + PLAYER_RADIUS) * (z.radius + PLAYER_RADIUS)) {
+        player.hp -= 0.6;
+      }
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.x += b.vx;
+      b.y += b.vy;
+      b.life -= dt / 1000;
+      if (b.life <= 0 || b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
+        bullets.splice(i, 1);
+        continue;
+      }
+      let hit = false;
+      for (let j = zombies.length - 1; j >= 0; j--) {
+        const z = zombies[j];
+        if (distSq(b.x, b.y, z.x, z.y) < (z.radius + b.radius) * (z.radius + b.radius)) {
+          z.hp--;
+          hit = true;
+          if (z.hp <= 0) {
+            addParticles(z.x, z.y, '#7fff00', 10);
+            tryDrop(z.x, z.y);
+            zombies.splice(j, 1);
+            kills++;
+            playZombieDeath();
+          }
+          break;
+        }
+      }
+      if (!hit && boss) {
+        if (distSq(b.x, b.y, boss.x, boss.y) < (boss.radius + b.radius) * (boss.radius + b.radius)) {
+          boss.hp--;
+          hit = true;
+          playBossHurt();
+          addParticles(b.x, b.y, '#ff2d55', 4);
+          document.getElementById('bossBarFill').style.width =
+            Math.max(0, (boss.hp / boss.maxHp) * 100) + '%';
+          if (boss.hp <= 0) killBoss();
+        }
+      }
+      if (hit) bullets.splice(i, 1);
+    }
 
     if (boss) {
-        bossBarFill.style.width = clamp(boss.hp / boss.maxHp, 0, 1) * 100 + '%';
+      const dx = player.x - boss.x, dy = player.y - boss.y;
+      const d = Math.hypot(dx, dy) || 1;
+      boss.x += (dx / d) * boss.speed;
+      boss.y += (dy / d) * boss.speed;
+      boss.wobble += 0.08;
+
+      if (distSq(boss.x, boss.y, player.x, player.y) < (boss.radius + PLAYER_RADIUS) * (boss.radius + PLAYER_RADIUS)) {
+        player.hp -= 1.2;
+      }
+
+      bossShootTimer += dt;
+      if (bossShootTimer >= BOSS_SHOOT_INTERVAL) {
+        bossShootTimer = 0;
+        const a = Math.atan2(player.y - boss.y, player.x - boss.x);
+        bossBullets.push({
+          x: boss.x, y: boss.y,
+          vx: Math.cos(a) * 2.6,
+          vy: Math.sin(a) * 2.6,
+          radius: 9, life: 6
+        });
+        playBossShoot();
+      }
     }
 
-    // 狂暴优先显示
-    if (rageTimer > 0) {
-        buffWeapon.style.display = 'block';
-        buffWeapon.textContent = '🔥 狂暴 ' + Math.ceil(rageTimer / 1000) + 's';
-        buffWeapon.style.background = '#ff2e6344';
-        buffWeapon.style.borderColor = '#ff2e63';
-        buffWeapon.style.color = '#ffb0b0';
-        buffWeapon.style.textShadow = '0 0 10px #ff2e63';
-    } else if (weaponBuffTimer > 0) {
-        buffWeapon.style.display = 'block';
-        buffWeapon.textContent = '🌟 三发散射';
-        buffWeapon.style.background = '#b44bff44';
-        buffWeapon.style.borderColor = '#b44bff';
-        buffWeapon.style.color = '#d9aaff';
-        buffWeapon.style.textShadow = '0 0 10px #b44bff';
-    } else {
-        buffWeapon.style.display = 'none';
+    for (let i = bossBullets.length - 1; i >= 0; i--) {
+      const bb = bossBullets[i];
+      bb.x += bb.vx;
+      bb.y += bb.vy;
+      bb.life -= dt / 1000;
+      if (bb.life <= 0 || bb.x < -30 || bb.x > W + 30 || bb.y < -30 || bb.y > H + 30) {
+        bossBullets.splice(i, 1);
+        continue;
+      }
+      if (distSq(bb.x, bb.y, player.x, player.y) < (bb.radius + PLAYER_RADIUS) * (bb.radius + PLAYER_RADIUS)) {
+        player.hp -= 12;
+        addParticles(bb.x, bb.y, '#ff2d55', 8);
+        bossBullets.splice(i, 1);
+      }
     }
 
-    buffSpeed.style.display = (speedBuffTimer > 0) ? 'block' : 'none';
-}
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      it.life -= dt / 1000;
+      it.bob += 0.1;
+      if (it.life <= 0) { items.splice(i, 1); continue; }
+      if (distSq(it.x, it.y, player.x, player.y) < PICKUP_DIST_SQ) {
+        pickupItem(it);
+        items.splice(i, 1);
+      }
+    }
 
-// ==================== 渲染 ====================
-function render() {
-    ctx.fillStyle = '#0a0f18';
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.94;
+      p.vy *= 0.94;
+      p.life -= dt / 600;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    for (let i = floatTexts.length - 1; i >= 0; i--) {
+      const f = floatTexts[i];
+      f.y += f.vy;
+      f.life -= dt / 900;
+      if (f.life <= 0) floatTexts.splice(i, 1);
+    }
+
+    if (player.hp <= 0) {
+      player.hp = 0;
+      gameOver();
+    }
+
+    updateHUD();
+  }
+
+  // ==================== HUD ====================
+  function updateHUD() {
+    document.getElementById('hpBarFill').style.width =
+      Math.max(0, (player.hp / player.maxHp) * 100) + '%';
+    document.getElementById('killCount').textContent = '击杀 ' + kills;
+    document.getElementById('difficultyDisplay').textContent = '难度 Lv.' + difficultyLevel;
+    document.getElementById('hudHighScore').textContent = '最高分 ' + highScore;
+    document.getElementById('buffWeapon').classList.toggle('on', weaponBuffTimer > 0);
+    document.getElementById('buffSpeed').classList.toggle('on', speedBuffTimer > 0);
+  }
+
+  // ==================== 渲染 ====================
+  function drawGrid() {
+    ctx.fillStyle = '#0a0d14';
     ctx.fillRect(0, 0, W, H);
 
+    ctx.strokeStyle = 'rgba(0, 255, 200, 0.06)';
+    ctx.lineWidth = 1;
+    const gs = 45;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += gs) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = 0; y <= H; y += gs) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+  }
+
+  function drawItems() {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const bobY = Math.sin(it.bob) * 4;
+            const glow = ctx.createRadialGradient(it.x, it.y + bobY, 0, it.x, it.y + bobY, 26);
+      let c = 'rgba(255,45,85,0.5)';
+      if (it.type === 'lightning') c = 'rgba(0,179,255,0.5)';
+      if (it.type === 'star') c = 'rgba(255,215,0,0.5)';
+      glow.addColorStop(0, c);
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(it.x, it.y + bobY, 26, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '26px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      let emoji = '❤️';
+      if (it.type === 'lightning') emoji = '⚡';
+      if (it.type === 'star') emoji = '🌟';
+      ctx.fillText(emoji, it.x, it.y + bobY);
+    }
+  }
+
+  function drawZombies() {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < zombies.length; i++) {
+      const z = zombies[i];
+      const wob = Math.sin(z.wobble) * 3;
+      ctx.font = '32px serif';
+      ctx.fillText('🧟‍♂️', z.x, z.y + wob);
+    }
+  }
+
+  function drawBoss() {
+    if (!boss) return;
+    const wob = Math.sin(boss.wobble) * 5;
+    const glow = ctx.createRadialGradient(boss.x, boss.y, 0, boss.x, boss.y, boss.radius * 1.8);
+    glow.addColorStop(0, 'rgba(255,45,85,0.35)');
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(boss.x, boss.y, boss.radius * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '96px serif';
+    ctx.fillText('🧟', boss.x, boss.y + wob);
+  }
+
+  function drawBullets() {
+    for (let i = 0; i < bullets.length; i++) {
+      const b = bullets[i];
+      ctx.fillStyle = '#00ffc8';
+      ctx.shadowColor = '#00ffc8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function drawBossBullets() {
+    for (let i = 0; i < bossBullets.length; i++) {
+      const bb = bossBullets[i];
+      ctx.fillStyle = '#ff2d55';
+      ctx.shadowColor = '#ff2d55';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(bb.x, bb.y, bb.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function drawPlayer() {
+    if (speedBuffTimer > 0) {
+      ctx.strokeStyle = 'rgba(0,179,255,0.7)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_RADIUS + 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (weaponBuffTimer > 0) {
+      ctx.strokeStyle = 'rgba(255,215,0,0.7)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_RADIUS + 13, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '36px serif';
+    ctx.fillText('🤠', player.x, player.y);
+  }
+
+  function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFloatTexts() {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < floatTexts.length; i++) {
+      const f = floatTexts[i];
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.font = 'bold 18px "Segoe UI", sans-serif';
+      ctx.fillStyle = f.color;
+      ctx.shadowColor = f.color;
+      ctx.shadowBlur = 8;
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawCrosshair() {
+    const cx = player.x + Math.cos(aimAngle) * 60;
+    const cy = player.y + Math.sin(aimAngle) * 60;
+    ctx.strokeStyle = 'rgba(0,255,200,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, cy); ctx.lineTo(cx - 4, cy);
+    ctx.moveTo(cx + 4, cy); ctx.lineTo(cx + 12, cy);
+    ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy - 4);
+    ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 12);
+    ctx.stroke();
+  }
+
+  function render() {
     drawGrid();
     drawItems();
     drawZombies();
     drawBoss();
-    drawChest();       // 宝箱在实体之上
     drawBullets();
     drawBossBullets();
     drawPlayer();
     drawParticles();
     drawFloatTexts();
     drawCrosshair();
-}
+  }
 
-function drawGrid() {
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.06)';
-    ctx.lineWidth = 1;
-    const gs = 50;
-    ctx.beginPath();
-    for (let x = 0; x <= W; x += gs) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-    }
-    for (let y = 0; y <= H; y += gs) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-    }
-    ctx.stroke();
-
-    const g = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 500);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.5)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-}
-
-function drawItems() {
-    for (const it of items) {
-        const bobY = Math.sin(it.bob) * 3;
-        ctx.save();
-        ctx.translate(it.x, it.y + bobY);
-
-        const gr = ctx.createRadialGradient(0, 0, 2, 0, 0, ITEM_RADIUS + 8);
-        let col = 'rgba(255,255,255,0.5)';
-        if (it.type === 'heart') col = 'rgba(255, 77, 109, 0.5)';
-        else if (it.type === 'lightning') col = 'rgba(0, 229, 255, 0.5)';
-        else col = 'rgba(180, 75, 255, 0.5)';
-        gr.addColorStop(0, col);
-        gr.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.arc(0, 0, ITEM_RADIUS + 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font = '28px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        let emoji = '❤️';
-        if (it.type === 'lightning') emoji = '⚡';
-        else if (it.type === 'star') emoji = '🌟';
-        ctx.fillText(emoji, 0, 1);
-        ctx.restore();
-    }
-}
-
-function drawZombies() {
-    for (const z of zombies) {
-        ctx.save();
-        ctx.translate(z.x, z.y);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.beginPath();
-        ctx.ellipse(0, z.radius * 0.9, z.radius * 0.9, z.radius * 0.4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = '32px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🧟‍♂️', 0, 0);
-        ctx.restore();
-    }
-}
-
-function drawBoss() {
-    if (!boss) return;
-    ctx.save();
-    ctx.translate(boss.x, boss.y);
-
-    const t = performance.now() / 400;
-    const gr = ctx.createRadialGradient(0, 0, BOSS_RADIUS * 0.4, 0, 0, BOSS_RADIUS * 1.8);
-    gr.addColorStop(0, 'rgba(255, 46, 99, 0.35)');
-    gr.addColorStop(1, 'rgba(255, 46, 99, 0)');
-    ctx.fillStyle = gr;
-    ctx.beginPath();
-    ctx.arc(0, 0, BOSS_RADIUS * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (boss.hitFlash > 0) {
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(0, 0, BOSS_RADIUS + 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.ellipse(0, BOSS_RADIUS * 0.9, BOSS_RADIUS * 1.1, BOSS_RADIUS * 0.45, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = '96px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const sc = 1 + Math.sin(t) * 0.03;
-    ctx.scale(sc, sc);
-    ctx.fillText('🧟', 0, 6);
-    ctx.restore();
-}
-
-function drawChest() {
-    if (!chest) return;
-    const bobY = Math.sin(chest.bob) * 5;
-    ctx.save();
-    ctx.translate(chest.x, chest.y + bobY);
-
-    // 金色旋转光芒
-    const t = performance.now() / 600;
-    ctx.save();
-    ctx.rotate(t * 0.5);
-    for (let i = 0; i < 8; i++) {
-        ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = 'rgba(255, 215, 0, ' + (0.18 + Math.sin(t * 3 + i) * 0.1) + ')';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-10, -CHEST_RADIUS * 2.2);
-        ctx.lineTo(10, -CHEST_RADIUS * 2.2);
-        ctx.closePath();
-        ctx.fill();
-    }
-    ctx.restore();
-
-    // 外圈光晕
-    const gr = ctx.createRadialGradient(0, 0, 6, 0, 0, CHEST_RADIUS * 1.6);
-    gr.addColorStop(0, 'rgba(255, 215, 0, 0.7)');
-    gr.addColorStop(1, 'rgba(255, 215, 0, 0)');
-    ctx.fillStyle = gr;
-    ctx.beginPath();
-    ctx.arc(0, 0, CHEST_RADIUS * 1.6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 宝箱 emoji
-    ctx.font = '58px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📦', 0, 0);
-
-    // 提示
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillStyle = '#ffd700';
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 10;
-    ctx.fillText('拾取神装', 0, -CHEST_RADIUS - 22);
-    ctx.shadowBlur = 0;
-    ctx.restore();
-}
-
-function drawBullets() {
-    for (const b of bullets) {
-        ctx.save();
-        const gr = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 12);
-        gr.addColorStop(0, 'rgba(0, 229, 255, 0.9)');
-        gr.addColorStop(1, 'rgba(0, 229, 255, 0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 12, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#e0ffff';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-function drawBossBullets() {
-    for (const b of bossBullets) {
-        ctx.save();
-        const gr = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 2);
-        gr.addColorStop(0, 'rgba(255, 46, 99, 1)');
-        gr.addColorStop(0.5, 'rgba(255, 46, 99, 0.6)');
-        gr.addColorStop(1, 'rgba(255, 46, 99, 0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffd0d8';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-function drawPlayer() {
-    ctx.save();
-    ctx.translate(player.x, player.y);
-
-    // 狂暴光环
-    if (rageTimer > 0) {
-        const t = performance.now() / 300;
-        const pulse = 1 + Math.sin(t) * 0.15;
-
-        let gr = ctx.createRadialGradient(0, 0, PLAYER_RADIUS * 0.5, 0, 0, PLAYER_RADIUS * 2.6 * pulse);
-        gr.addColorStop(0, 'rgba(255, 46, 99, 0.45)');
-        gr.addColorStop(0.6, 'rgba(255, 46, 99, 0.15)');
-        gr.addColorStop(1, 'rgba(255, 46, 99, 0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.arc(0, 0, PLAYER_RADIUS * 2.6 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        gr = ctx.createRadialGradient(0, 0, 4, 0, 0, PLAYER_RADIUS * 1.8);
-        gr.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
-        gr.addColorStop(1, 'rgba(255, 215, 0, 0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.arc(0, 0, PLAYER_RADIUS * 1.8, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.save();
-        ctx.rotate(t * 0.8);
-        for (let i = 0; i < 6; i++) {
-            ctx.rotate(Math.PI / 3);
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
-            ctx.beginPath();
-            ctx.arc(0, -PLAYER_RADIUS * 1.9, 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.restore();
-    }
-
-    if (speedBuffTimer > 0) {
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.7)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(0, 0, PLAYER_RADIUS + 10, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath();
-    ctx.ellipse(0, PLAYER_RADIUS * 0.9, PLAYER_RADIUS * 0.9, PLAYER_RADIUS * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = '34px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🤠', 0, 1);
-
-    ctx.rotate(aimAngle);
-    ctx.fillStyle = '#00e5ff';
-    ctx.fillRect(PLAYER_RADIUS - 2, -2, 12, 4);
-    ctx.restore();
-}
-
-function drawParticles() {
-    for (const p of particles) {
-        const a = clamp(p.life / p.maxLife, 0, 1);
-        ctx.globalAlpha = a;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-}
-
-function drawFloatTexts() {
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (const f of floatTexts) {
-        const a = clamp(f.life / f.maxLife, 0, 1);
-        ctx.globalAlpha = a;
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillStyle = f.color;
-        ctx.shadowColor = f.color;
-        ctx.shadowBlur = 10;
-        ctx.fillText(f.text, f.x, f.y);
-    }
-    ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
-}
-
-function drawCrosshair() {
-    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.7)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(mouseX, mouseY, 10, 0, Math.PI * 2);
-    ctx.moveTo(mouseX - 16, mouseY);
-    ctx.lineTo(mouseX - 4, mouseY);
-    ctx.moveTo(mouseX + 4, mouseY);
-    ctx.lineTo(mouseX + 16, mouseY);
-    ctx.moveTo(mouseX, mouseY - 16);
-    ctx.lineTo(mouseX, mouseY - 4);
-    ctx.moveTo(mouseX, mouseY + 4);
-    ctx.lineTo(mouseX, mouseY + 16);
-    ctx.stroke();
-    ctx.restore();
-}
-
-// ==================== 主循环 ====================
-function loop(now) {
-    if (!running) return;
+  // ==================== 主循环 ====================
+  let lastTime = 0;
+  function loop(now) {
+    if (!lastTime) lastTime = now;
     let dt = now - lastTime;
     lastTime = now;
     if (dt > 100) dt = 100;
-    update(dt);
-    render();
-    requestAnimationFrame(loop);
-}
 
-// ==================== 游戏结束 ====================
-function gameOver() {
+    if (running) update(dt);
+    render();
+
+    requestAnimationFrame(loop);
+  }
+
+  // ==================== 游戏结束 ====================
+  function gameOver() {
     if (!running) return;
     running = false;
-    bossBarWrap.style.display = 'none';
 
-    const finalKills = kills;
-    if (finalKills > highScore) {
-        highScore = finalKills;
-        localStorage.setItem(HS_KEY, String(highScore));
-        newRecordText.style.display = 'block';
-    } else {
-        newRecordText.style.display = 'none';
+    const score = kills;
+    const isNew = score > highScore;
+    if (isNew) {
+      highScore = score;
+      localStorage.setItem(HIGHSCORE_KEY, String(highScore));
     }
-    hudHighScore.textContent = '最高 ' + highScore;
 
-    finalScore.textContent = finalKills;
-    finalHighScore.textContent = highScore;
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('finalHighScore').textContent = highScore;
+    document.getElementById('newRecordText').classList.toggle('show', isNew);
+    document.getElementById('gameOverScreen').classList.add('show');
+  }
 
-    gameOverScreen.style.display = 'flex';
-}
-
-// ==================== 重新开始 ====================
-function restartGame() {
+  function restartGame() {
     if (restartLock) return;
     restartLock = true;
     setTimeout(() => { restartLock = false; }, 300);
+    initAudio();
     resetGame();
-}
+  }
 
-// ==================== 重置 ====================
-function resetGame() {
-    zombies = [];
-    bullets = [];
-    items = [];
-    particles = [];
-    floatTexts = [];
-    bossBullets = [];
-    boss = null;
-    chest = null;
-
-    bossSpawned = false;
-    bossBarWrap.style.display = 'none';
-    bossWarning.style.display = 'none';
-    superRewardText.style.display = 'none';
-    superRewardText.style.opacity = '1';
-    gameOverScreen.style.display = 'none';
-
-    player.x = W / 2;
-    player.y = H / 2;
-    player.hp = 100;
-    player.maxHp = 100;
-    player.lastShot = 0;
-
-    gameTime = 0;
-    kills = 0;
-    spawnTimer = 0;
-    spawnInterval = 1600;
-    speedMultiplier = 1;
-    difficultyLevel = 1;
-    lastTimeLevel = 0;
-    lastKillLevel = 0;
-
-    weaponBuffTimer = 0;
-    speedBuffTimer = 0;
-    rageTimer = 0;
-
-    aimAngle = -Math.PI / 2;
-    mouseX = W / 2;
-    mouseY = H / 2;
-
-    joyActive = false;
-    joyDX = 0; joyDY = 0;
-    joyId = null;
-    fireActive = false;
-    fireId = null;
-
-    killCountEl.textContent = '0';
-    difficultyDisplay.textContent = 'Lv.1';
-    buffWeapon.style.display = 'none';
-    buffSpeed.style.display = 'none';
-    updateHUD();
-
-    for (let i = 0; i < 3; i++) spawnZombie();
-
-    running = true;
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-}
-
-// ==================== 输入 ====================
-window.addEventListener('keydown', (e) => {
+  // ==================== 输入：键盘 ====================
+  window.addEventListener('keydown', function (e) {
     const k = e.key.toLowerCase();
     keys[k] = true;
-    if (k === ' ') { e.preventDefault(); initAudio(); }
-});
-window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-});
+    if (k === ' ') e.preventDefault();
+  });
+  window.addEventListener('keyup', function (e) {
+    const k = e.key.toLowerCase();
+    keys[k] = false;
+  });
 
-canvas.addEventListener('mousemove', (e) => {
+  // ==================== 输入：鼠标 ====================
+  canvas.addEventListener('mousemove', function (e) {
     const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width / rect.width;
-    const sy = canvas.height / rect.height;
-    mouseX = (e.clientX - rect.left) * sx;
-    mouseY = (e.clientY - rect.top) * sy;
-});
-canvas.addEventListener('mousedown', (e) => {
-    initAudio();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    aimAngle = Math.atan2(my - player.y, mx - player.x);
+  });
+  canvas.addEventListener('mousedown', function (e) {
     if (e.button === 0) fireActive = true;
-});
-window.addEventListener('mouseup', () => { fireActive = false; });
+  });
+  window.addEventListener('mouseup', function (e) {
+    if (e.button === 0) fireActive = false;
+  });
 
-function setJoystickFromTouch(t) {
-    const rect = joystick.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let dx = (t.clientX - cx) / (rect.width / 2);
-    let dy = (t.clientY - cy) / (rect.height / 2);
-    const len = Math.hypot(dx, dy);
-    if (len > 1) { dx /= len; dy /= len; }
-    joyDX = dx;
-    joyDY = dy;
-    const maxR = rect.width / 2 - 14;
-    joystickKnob.style.transform = `translate(calc(-50% + ${dx * maxR}px), calc(-50% + ${dy * maxR}px))`;
-}
-function resetJoystick() {
-    joyDX = 0; joyDY = 0;
-    joystickKnob.style.transform = 'translate(-50%, -50%)';
-}
+  // ==================== 输入：触屏 ====================
+  const joystick = document.getElementById('joystick');
+  const joystickKnob = document.getElementById('joystickKnob');
+  const fireButton = document.getElementById('fireButton');
 
-joystick.addEventListener('touchstart', (e) => {
+  function joyCenter() {
+    const r = joystick.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2 };
+  }
+
+  function handleJoyMove(clientX, clientY) {
+    const c = joyCenter();
+    let dx = clientX - c.x;
+    let dy = clientY - c.y;
+    const maxR = c.r - 20;
+    const d = Math.hypot(dx, dy);
+    if (d > maxR) { dx = dx / d * maxR; dy = dy / d * maxR; }
+    joystickKnob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    joyVec.x = dx / maxR;
+    joyVec.y = dy / maxR;
+  }
+
+  function resetJoy() {
+    joystickKnob.style.transform = 'translate(0,0)';
+    joyVec.x = 0;
+    joyVec.y = 0;
+    joyId = null;
+  }
+
+  joystick.addEventListener('touchstart', function (e) {
     e.preventDefault();
-    initAudio();
     const t = e.changedTouches[0];
     joyId = t.identifier;
-    joyActive = true;
-    setJoystickFromTouch(t);
-}, { passive: false });
+    handleJoyMove(t.clientX, t.clientY);
+  }, { passive: false });
 
-joystick.addEventListener('touchmove', (e) => {
+  fireButton.addEventListener('touchstart', function (e) {
     e.preventDefault();
-    for (const t of e.changedTouches) {
-        if (t.identifier === joyId) setJoystickFromTouch(t);
-    }
-}, { passive: false });
-
-function endJoy(e) {
-    for (const t of e.changedTouches) {
-        if (t.identifier === joyId) {
-            joyActive = false;
-            joyId = null;
-            resetJoystick();
-        }
-    }
-}
-joystick.addEventListener('touchend', endJoy);
-joystick.addEventListener('touchcancel', endJoy);
-
-fireButton.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    initAudio();
     const t = e.changedTouches[0];
     fireId = t.identifier;
     fireActive = true;
-    tryShoot();
-}, { passive: false });
+  }, { passive: false });
 
-function endFire(e) {
-    for (const t of e.changedTouches) {
-        if (t.identifier === fireId) {
-            fireActive = false;
-            fireId = null;
-        }
-    }
-}
-fireButton.addEventListener('touchend', endFire);
-fireButton.addEventListener('touchcancel', endFire);
-
-document.addEventListener('touchmove', (e) => {
-    if (e.target === canvas || e.target === joystick || e.target === fireButton) {
+  window.addEventListener('touchmove', function (e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joyId) {
         e.preventDefault();
+        handleJoyMove(t.clientX, t.clientY);
+      }
     }
-}, { passive: false });
-canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); }, { passive: false });
+  }, { passive: false });
 
-restartBtn.addEventListener('click', restartGame);
-restartBtn.addEventListener('touchend', (e) => {
+  window.addEventListener('touchend', function (e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joyId) resetJoy();
+      if (t.identifier === fireId) { fireActive = false; fireId = null; }
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchcancel', function (e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joyId) resetJoy();
+      if (t.identifier === fireId) { fireActive = false; fireId = null; }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+  // ==================== 重启按钮 ====================
+  const restartBtn = document.getElementById('restartBtn');
+  restartBtn.addEventListener('click', restartGame);
+  restartBtn.addEventListener('touchend', function (e) {
     e.preventDefault();
     restartGame();
-}, { passive: false });
+  }, { passive: false });
 
-function detectTouch() {
-    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-    if (isTouch) touchControls.classList.add('active');
-}
-detectTouch();
+  // ==================== 设备检测 ====================
+  if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+    document.getElementById('touchControls').classList.add('active');
+  }
 
-function fitStage() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const scale = Math.min(vw / W, vh / H);
-    stage.style.transform = 'scale(' + scale + ')';
-}
-fitStage();
-window.addEventListener('resize', fitStage);
-window.addEventListener('orientationchange', () => setTimeout(fitStage, 150));
+  // ==================== 启动 ====================
+  initAudio();
+  resetGame();
+  requestAnimationFrame(loop);
 
-// ==================== 启动：进入即玩 ====================
-initAudio();
-resetGame();
-    })();
+})();
 </script>
+</body>
+</html>
 
-</body> </html> 
- 
