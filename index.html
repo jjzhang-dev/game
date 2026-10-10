@@ -17,7 +17,10 @@
     #killCount { font-size: 22px; font-weight: bold; color: #00ffe0; text-shadow: 0 0 8px #00ffe0, 0 0 24px #00b3cc, 0 0 40px #007a8a; line-height: 1.1; }
     .high-score-mini { font-size: 11px; color: #ffcf5c; text-shadow: 0 0 6px #ffaa00, 0 0 14px #cc8800; }
     .right-block { text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-    #levelDisplay { font-size: 14px; font-weight: bold; color: #ff6ec7; text-shadow: 0 0 8px #ff6ec7, 0 0 20px #b3007a; letter-spacing: 2px; }
+    #difficultyDisplay { font-size: 16px; font-weight: 900; color: #ff6ec7; text-shadow: 0 0 8px #ff6ec7, 0 0 20px #b3007a; letter-spacing: 2px; }
+    #difficultyDisplay.flash { animation: lvlFlash 0.6s ease-out; }
+    @keyframes lvlFlash { 0% { transform: scale(1.6); color: #fff; text-shadow: 0 0 20px #fff; } 100% { transform: scale(1); } }
+
     #buffBar { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; margin-top: 2px; }
     .buff-chip { font-size: 10px; letter-spacing: 1px; padding: 3px 9px; border-radius: 10px; display: none; white-space: nowrap; }
     #buffWeapon { color: #2b1400; background: linear-gradient(90deg, #ffd700, #ffaa00); box-shadow: 0 0 12px #ffaa00; }
@@ -26,6 +29,39 @@
     #hpBarWrap { margin-top: 12px; width: 100%; height: 22px; border: 2px solid rgba(0, 229, 255, 0.5); border-radius: 12px; background: rgba(0, 20, 35, 0.75); box-shadow: inset 0 0 12px rgba(0, 229, 255, 0.25), 0 0 14px rgba(0, 229, 255, 0.3); overflow: hidden; position: relative; }
     #hpBarFill { height: 100%; width: 100%; border-radius: 10px; background: linear-gradient(90deg, #00ffb3 0%, #00e5ff 40%, #b44bff 100%); box-shadow: 0 0 16px rgba(0, 255, 200, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4); transition: width 0.18s linear; }
     .hp-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; color: #eaffff; text-shadow: 0 0 6px #000, 0 0 10px #00e5ff; letter-spacing: 2px; font-weight: bold; pointer-events: none; }
+
+    /* BOSS 血条（屏幕最上方） */
+    #bossBarWrap {
+      margin-top: 12px;
+      width: 100%;
+      height: 18px;
+      border: 2px solid rgba(255, 47, 94, 0.7);
+      border-radius: 10px;
+      background: rgba(40, 0, 10, 0.8);
+      box-shadow: 0 0 20px rgba(255, 47, 94, 0.6), inset 0 0 14px rgba(255, 47, 94, 0.3);
+      overflow: hidden;
+      position: relative;
+      display: none;
+    }
+    #bossBarWrap.active { display: block; }
+    #bossBarFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff2f5e, #ff8f00, #ffcf5c);
+      box-shadow: 0 0 16px rgba(255, 47, 94, 0.9), inset 0 0 10px rgba(255, 255, 255, 0.4);
+      transition: width 0.15s linear;
+    }
+    #bossBarWrap .boss-label {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 11px;
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 3px;
+      text-shadow: 0 0 6px #000, 0 0 10px #ff2f5e;
+      white-space: nowrap;
+    }
 
     #touchControls { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
     #touchControls.active { display: block; }
@@ -47,6 +83,25 @@
     @keyframes recordPulse { from { opacity: 0.65; transform: scale(1); } to { opacity: 1; transform: scale(1.06); } }
     #restartBtn { padding: 14px 46px; font-size: 15px; font-weight: bold; letter-spacing: 5px; color: #030509; background: linear-gradient(90deg, #00ffb3, #00e5ff, #b44bff); border: none; border-radius: 40px; cursor: pointer; box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 0 60px rgba(0, 255, 200, 0.35); transition: transform 0.15s ease; touch-action: manipulation; position: relative; z-index: 30; }
     #restartBtn:active { transform: scale(0.95); }
+
+    /* BOSS 警告横幅 */
+    #bossWarning {
+      position: absolute;
+      top: 40%; left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: #ff2f5e;
+      text-shadow: 0 0 14px #ff2f5e, 0 0 40px #b3002a;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 22;
+      transition: opacity 0.3s ease;
+    }
+    #bossWarning.show { opacity: 1; animation: bossFlash 0.5s ease-in-out infinite alternate; }
+    @keyframes bossFlash { from { transform: scale(1); } to { transform: scale(1.08); } }
   </style>
 </head>
 <body>
@@ -61,18 +116,26 @@
         <div class="high-score-mini">最高 <span id="hudHighScore">0</span></div>
       </div>
       <div class="right-block">
-        <div id="levelDisplay">LV.1</div>
+        <div id="difficultyDisplay">Lv.1</div>
         <div id="buffBar">
           <div class="buff-chip" id="buffWeapon">🌟 三发散射</div>
           <div class="buff-chip" id="buffSpeed">⚡ 加速</div>
         </div>
       </div>
     </div>
+
     <div id="hpBarWrap">
       <div id="hpBarFill"></div>
       <div class="hp-text">HP</div>
     </div>
+
+    <div id="bossBarWrap">
+      <div id="bossBarFill"></div>
+      <div class="boss-label">☠ BOSS ☠</div>
+    </div>
   </div>
+
+  <div id="bossWarning">⚠ BOSS 来袭 ⚠</div>
 
   <div id="touchControls">
     <div id="joystick"><div id="joystickKnob"></div></div>
@@ -106,21 +169,24 @@
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
-  const hpBarFill      = document.getElementById('hpBarFill');
-  const killCountEl    = document.getElementById('killCount');
-  const levelDisplay   = document.getElementById('levelDisplay');
-  const hudHighScore   = document.getElementById('hudHighScore');
-  const gameOverScreen = document.getElementById('gameOverScreen');
-  const finalHighScore = document.getElementById('finalHighScore');
-  const finalScore     = document.getElementById('finalScore');
-  const newRecordText  = document.getElementById('newRecordText');
-  const restartBtn     = document.getElementById('restartBtn');
-  const touchControls  = document.getElementById('touchControls');
-  const joystick       = document.getElementById('joystick');
-  const joystickKnob   = document.getElementById('joystickKnob');
-  const fireButton     = document.getElementById('fireButton');
-  const buffWeaponEl   = document.getElementById('buffWeapon');
-  const buffSpeedEl    = document.getElementById('buffSpeed');
+  const hpBarFill        = document.getElementById('hpBarFill');
+  const killCountEl      = document.getElementById('killCount');
+  const difficultyDisplay= document.getElementById('difficultyDisplay');
+  const hudHighScore     = document.getElementById('hudHighScore');
+  const gameOverScreen   = document.getElementById('gameOverScreen');
+  const finalHighScore   = document.getElementById('finalHighScore');
+  const finalScore       = document.getElementById('finalScore');
+  const newRecordText    = document.getElementById('newRecordText');
+  const restartBtn       = document.getElementById('restartBtn');
+  const touchControls    = document.getElementById('touchControls');
+  const joystick         = document.getElementById('joystick');
+  const joystickKnob     = document.getElementById('joystickKnob');
+  const fireButton       = document.getElementById('fireButton');
+  const buffWeaponEl     = document.getElementById('buffWeapon');
+  const buffSpeedEl      = document.getElementById('buffSpeed');
+  const bossBarWrap      = document.getElementById('bossBarWrap');
+  const bossBarFill      = document.getElementById('bossBarFill');
+  const bossWarning      = document.getElementById('bossWarning');
 
   /* ========== 最高分 ========== */
   const HS_KEY = 'zombie_survival_highscore';
@@ -135,13 +201,27 @@
   let spawnTimer = 0;
   let spawnInterval = 1200;
   let kills = 0;
-  let level = 1;
+  let level = 1;                  // 难度等级
   let speedMultiplier = 1;
+
+  // 难度提升触发点追踪
+  let lastTimeLevel = 0;          // 上次因存活时间升级的 30s 节点
+  let lastKillLevel = 0;          // 上次因击杀升级的 20 杀节点
+
+  // BOSS
+  let boss = null;
+  let bossSpawned = false;        // 是否已刷新过 BOSS
+  let bossBullets = [];
+  let bossShootTimer = 0;
+  const BOSS_MAX_HP = 50;         // 打 50 枪才死
+  const BOSS_RADIUS = 48;         // 普通丧尸 16 的 3 倍
+  const BOSS_SPEED = 0.55;        // 移动慢
+  const BOSS_SHOOT_INTERVAL = 1800; // 每 1.8s 射一发
 
   let player = null;
   let zombies = [];
   let bullets = [];
-  let items = [];          // ← 道具数组（统一命名 items）
+  let items = [];
   let particles = [];
   let floatTexts = [];
 
@@ -150,11 +230,9 @@
   let weaponBuffTimer = 0;
   let speedBuffTimer = 0;
 
-  // 玩家碰撞半径与道具半径（用于碰撞检测）
   const PLAYER_RADIUS = 18;
-  const ITEM_RADIUS = 15;        // 道具碰撞半径
-  const PICKUP_DIST = PLAYER_RADIUS + ITEM_RADIUS;  // = 33
-  const PICKUP_DIST_SQ = PICKUP_DIST * PICKUP_DIST; // 用平方距离，避免开方
+  const ITEM_RADIUS = 15;
+  const PICKUP_DIST_SQ = (PLAYER_RADIUS + ITEM_RADIUS) * (PLAYER_RADIUS + ITEM_RADIUS);
 
   const SHOT_CD = 180;
   const SHOT_CD_BUFF = 110;
@@ -162,7 +240,7 @@
   const SPEED_BUFF_DUR = 5000;
   const BASE_SPEED = 4.5;
   const SPEED_BUFF_MUL = 1.7;
-  const HEAL_AMOUNT = 20;        // ★ 恢复 20 点生命
+  const HEAL_AMOUNT = 20;
 
   const keys = {};
   let mouseX = W / 2, mouseY = H / 2;
@@ -177,9 +255,7 @@
   /* ========== 音效 ========== */
   let audioCtx = null;
   function initAudio() {
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-    }
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   }
   function beep(freq, dur, type, vol) {
@@ -200,6 +276,10 @@
   function playPickup()      { beep(1200, 0.12, 'sine', 0.1); }
   function playLevelUp()     { beep(660, 0.15, 'square', 0.09); setTimeout(() => beep(990, 0.2, 'square', 0.09), 120); }
   function playBuff()        { beep(760, 0.1, 'square', 0.09); setTimeout(() => beep(1140, 0.18, 'square', 0.09), 100); }
+  function playBossShoot()   { beep(140, 0.2, 'sawtooth', 0.12); }
+  function playBossHurt()    { beep(320, 0.06, 'square', 0.08); }
+  function playBossDie()     { beep(90, 0.6, 'sawtooth', 0.15); setTimeout(() => beep(60, 0.8, 'sawtooth', 0.15), 300); }
+  function playBossWarning() { beep(200, 0.3, 'square', 0.12); setTimeout(() => beep(150, 0.4, 'square', 0.12), 350); }
 
   /* ========== 粒子 & 飘字 ========== */
   function spawnParticles(x, y, color, count) {
@@ -218,6 +298,11 @@
     running = true;
     gameTime = 0; spawnTimer = 0; spawnInterval = 1200;
     kills = 0; level = 1; speedMultiplier = 1;
+    lastTimeLevel = 0; lastKillLevel = 0;
+
+    boss = null; bossSpawned = false; bossBullets = []; bossShootTimer = 0;
+    bossBarWrap.classList.remove('active');
+    bossWarning.classList.remove('show');
 
     zombies = []; bullets = []; items = []; particles = []; floatTexts = [];
 
@@ -225,12 +310,10 @@
     aimAngle = 0; mouseX = W / 2; mouseY = H / 2;
 
     player = {
-      x: W / 2,
-      y: H / 2,
+      x: W / 2, y: H / 2,
       radius: PLAYER_RADIUS,
       speed: BASE_SPEED,
-      hp: 100,
-      maxHp: 100
+      hp: 100, maxHp: 100
     };
 
     for (let i = 0; i < 3; i++) spawnZombie();
@@ -247,9 +330,60 @@
     zombies.push({ x, y, radius: 16, speed: (0.9 + Math.random() * 0.6) * speedMultiplier, hp: 1 });
   }
 
+  /* ========== 难度提升 ========== */
+  function increaseDifficulty(reason) {
+    level++;
+    speedMultiplier += 0.10;              // 速度 +10%
+    spawnInterval = Math.max(350, spawnInterval * 0.90); // 刷新频率 +10%（间隔 ×0.9）
+
+    // 现有丧尸速度同步提升 10%
+    for (const z of zombies) z.speed = (0.9 + Math.random() * 0.6) * speedMultiplier;
+    // BOSS 也提速
+    if (boss) boss.speed = BOSS_SPEED * (1 + (level - 5) * 0.05);
+
+    // UI 反馈
+    difficultyDisplay.textContent = 'Lv.' + level;
+    difficultyDisplay.classList.remove('flash');
+    void difficultyDisplay.offsetWidth;   // 触发重排以重启动画
+    difficultyDisplay.classList.add('flash');
+
+    playLevelUp();
+    spawnFloatText(player.x, player.y - 40, '难度提升！Lv.' + level, '#ff6ec7');
+
+    // 达到 Lv.5 刷新 BOSS（只刷一次）
+    if (level >= 5 && !bossSpawned) {
+      spawnBoss();
+    }
+  }
+
+  /* ========== 刷新 BOSS ========== */
+  function spawnBoss() {
+    bossSpawned = true;
+    boss = {
+      x: W / 2,
+      y: -60,
+      radius: BOSS_RADIUS,
+      speed: BOSS_SPEED,
+      hp: BOSS_MAX_HP,
+      maxHp: BOSS_MAX_HP,
+      hitFlash: 0
+    };
+    bossShootTimer = 800;   // 首次稍快一点开火
+
+    bossBarWrap.classList.add('active');
+    bossBarFill.style.width = '100%';
+    bossWarning.classList.add('show');
+    playBossWarning();
+    spawnFloatText(W / 2, H / 2, '⚠ BOSS 来袭 ⚠', '#ff2f5e');
+
+    setTimeout(() => {
+      bossWarning.classList.remove('show');
+    }, 2200);
+  }
+
+  /* ========== HUD ========== */
   function updateHUD() {
     killCountEl.textContent = kills;
-    levelDisplay.textContent = 'LV.' + level;
     const pct = Math.max(0, player ? player.hp / player.maxHp * 100 : 0);
     hpBarFill.style.width = pct + '%';
 
@@ -262,16 +396,24 @@
       buffSpeedEl.style.display = 'block';
       buffSpeedEl.textContent = '⚡ 加速 ' + Math.ceil(speedBuffTimer / 1000) + 's';
     } else buffSpeedEl.style.display = 'none';
+
+    // BOSS 血条
+    if (boss && boss.hp > 0) {
+      bossBarWrap.classList.add('active');
+      bossBarFill.style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
+    } else {
+      bossBarWrap.classList.remove('active');
+    }
   }
 
-  /* ========== 键盘 ========== */
+  /* ========== 输入：键盘 ========== */
   window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-  /* ========== 鼠标 ========== */
+  /* ========== 输入：鼠标 ========== */
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
     mouseX = (e.clientX - r.left) / r.width * W;
@@ -283,7 +425,7 @@
     e.preventDefault(); initAudio(); tryShoot();
   });
 
-  /* ========== 摇杆 ========== */
+  /* ========== 输入：摇杆 ========== */
   function updateJoystickFromTouch(t) {
     const r = joystick.getBoundingClientRect();
     const cx = r.left + r.width / 2;
@@ -311,7 +453,7 @@
   joystick.addEventListener('touchend', endJoy);
   joystick.addEventListener('touchcancel', endJoy);
 
-  /* ========== 射击键 ========== */
+  /* ========== 输入：射击键 ========== */
   fireButton.addEventListener('touchstart', e => {
     e.preventDefault(); initAudio(); fireActive = true;
     if (fireId === null) fireId = e.changedTouches[0].identifier;
@@ -322,7 +464,6 @@
   }, { passive: false });
   fireButton.addEventListener('touchcancel', () => { fireId = null; fireActive = false; });
 
-  // 阻止页面滑动
   document.addEventListener('touchmove', e => {
     if (e.target === canvas || e.target === joystick || e.target === fireButton ||
         joystick.contains(e.target) || fireButton.contains(e.target)) e.preventDefault();
@@ -335,10 +476,15 @@
     const upgraded = weaponBuffTimer > 0;
     shotCd = upgraded ? SHOT_CD_BUFF : SHOT_CD;
 
+    // 优先瞄准 BOSS，否则找最近丧尸
     let target = null, minDist = Infinity;
-    for (const z of zombies) {
-      const d = Math.hypot(z.x - player.x, z.y - player.y);
-      if (d < minDist) { minDist = d; target = z; }
+    if (boss && boss.hp > 0) {
+      target = boss;
+    } else {
+      for (const z of zombies) {
+        const d = Math.hypot(z.x - player.x, z.y - player.y);
+        if (d < minDist) { minDist = d; target = z; }
+      }
     }
     if (target) aimAngle = Math.atan2(target.y - player.y, target.x - player.x);
 
@@ -365,18 +511,15 @@
   const DROP_EMOJI = { heart: '❤️', lightning: '⚡', star: '🌟' };
   const DROP_COLOR = { heart: '#ff2f5e', lightning: '#00e5ff', star: '#ffcf5c' };
 
-  /* ========== ★ 拾取处理（修复核心） ========== */
+  /* ========== 拾取 ========== */
   function pickupItem(item) {
     if (!item || !player) return;
 
     if (item.type === 'heart') {
-      // ★ 严格按 Math.min(player.hp + 20, player.maxHp) 格式
       const before = player.hp;
       player.hp = Math.min(player.hp + HEAL_AMOUNT, player.maxHp);
       const gained = Math.round(player.hp - before);
-      // 即使满血也显示提示（gained 可能为 0）
       spawnFloatText(item.x, item.y, gained > 0 ? ('+' + gained + ' 生命') : '生命已满', '#ff5e9e');
-      // 回血音效（升调）
       beep(600, 0.08, 'sine', 0.1);
       setTimeout(() => beep(900, 0.12, 'sine', 0.1), 70);
     } else if (item.type === 'lightning') {
@@ -391,7 +534,7 @@
 
     spawnParticles(item.x, item.y, DROP_COLOR[item.type], 10);
     playPickup();
-    updateHUD();  // ★ 立即刷新血条 UI
+    updateHUD();
   }
 
   /* ========== 更新 ========== */
@@ -401,6 +544,19 @@
     gameTime += dt;
     if (shotCd > 0) shotCd -= dt;
 
+    // ---- 难度提升判定（30 秒 或 20 杀）----
+    const timeMilestone = Math.floor(gameTime / 30000);   // 每 30s 一个节点
+    if (timeMilestone > lastTimeLevel) {
+      lastTimeLevel = timeMilestone;
+      increaseDifficulty('time');
+    }
+    const killMilestone = Math.floor(kills / 20);          // 每 20 杀一个节点
+    if (killMilestone > lastKillLevel) {
+      lastKillLevel = killMilestone;
+      increaseDifficulty('kill');
+    }
+
+    // 增益倒计时
     let buffChanged = false;
     if (weaponBuffTimer > 0) { weaponBuffTimer -= dt; if (weaponBuffTimer <= 0) { weaponBuffTimer = 0; buffChanged = true; } }
     if (speedBuffTimer > 0) { speedBuffTimer -= dt; if (speedBuffTimer <= 0) { speedBuffTimer = 0; buffChanged = true; } }
@@ -411,7 +567,6 @@
     // 生成丧尸
     spawnTimer += dt;
     if (spawnTimer >= spawnInterval) { spawnTimer = 0; spawnZombie(); }
-    spawnInterval = Math.max(400, 1200 - Math.floor(gameTime / 15000) * 150);
 
     // 玩家移动
     let mx = 0, my = 0;
@@ -432,14 +587,71 @@
 
     if (fireActive) tryShoot();
 
-    // 子弹
+    // 玩家子弹
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx; b.y += b.vy; b.life -= 0.012;
       if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20 || b.life <= 0) bullets.splice(i, 1);
     }
 
-    // 丧尸追踪 & 碰撞玩家
+    // ===== BOSS 逻辑 =====
+    if (boss && boss.hp > 0) {
+      // 缓慢追踪玩家
+      const bdx = player.x - boss.x;
+      const bdy = player.y - boss.y;
+      const bdist = Math.hypot(bdx, bdy) || 1;
+      if (bdist > boss.radius + player.radius + 10) {
+        boss.x += bdx / bdist * boss.speed;
+        boss.y += bdy / bdist * boss.speed;
+      }
+
+      // 命中闪白衰减
+      if (boss.hitFlash > 0) boss.hitFlash -= dt;
+
+      // 发射慢速子弹（瞄准玩家当前位置）
+      bossShootTimer -= dt;
+      if (bossShootTimer <= 0) {
+        bossShootTimer = BOSS_SHOOT_INTERVAL;
+        const a = Math.atan2(player.y - boss.y, player.x - boss.x);
+        const sp = 2.6;   // 慢速
+        bossBullets.push({
+          x: boss.x, y: boss.y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          radius: 9,
+          life: 6
+        });
+        playBossShoot();
+      }
+
+      // 撞到玩家 → 持续伤害
+      if (bdist < boss.radius + player.radius) {
+        player.hp -= 1.2;
+        spawnParticles(player.x, player.y, '#ff2f5e', 3);
+        updateHUD();
+        if (player.hp <= 0) { player.hp = 0; updateHUD(); gameOver(); return; }
+      }
+    }
+
+    // BOSS 子弹移动 & 碰撞玩家
+    for (let i = bossBullets.length - 1; i >= 0; i--) {
+      const bb = bossBullets[i];
+      bb.x += bb.vx; bb.y += bb.vy;
+      bb.life -= dt / 1000;
+      if (bb.x < -30 || bb.x > W + 30 || bb.y < -30 || bb.y > H + 30 || bb.life <= 0) {
+        bossBullets.splice(i, 1); continue;
+      }
+      const d = Math.hypot(bb.x - player.x, bb.y - player.y);
+      if (d < bb.radius + player.radius) {
+        player.hp -= 12;
+        spawnParticles(bb.x, bb.y, '#ff2f5e', 12);
+        bossBullets.splice(i, 1);
+        updateHUD();
+        if (player.hp <= 0) { player.hp = 0; updateHUD(); gameOver(); return; }
+      }
+    }
+
+    // 普通丧尸追踪 & 碰撞玩家
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const dx = player.x - z.x, dy = player.y - z.y;
@@ -451,59 +663,69 @@
         player.hp -= 0.6;
         spawnParticles(z.x, z.y, '#ff2f5e', 2);
         updateHUD();
-        if (player.hp <= 0) {
-          player.hp = 0; updateHUD(); gameOver(); return;
-        }
+        if (player.hp <= 0) { player.hp = 0; updateHUD(); gameOver(); return; }
       }
     }
 
-    // 子弹 ↔ 丧尸
+    // 玩家子弹 ↔ 丧尸
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
+      let hit = false;
       for (let j = zombies.length - 1; j >= 0; j--) {
         const z = zombies[j];
-        const d = Math.hypot(b.x - z.x, b.y - z.y);
-        if (d < b.radius + z.radius) {
+        if (Math.hypot(b.x - z.x, b.y - z.y) < b.radius + z.radius) {
           bullets.splice(i, 1);
           zombies.splice(j, 1);
           spawnParticles(z.x, z.y, '#7cff5c', 8);
           playZombieDeath();
-           kills++;
+          kills++;
           tryDrop(z.x, z.y);
-          if (kills % 10 === 0) {
-            level++;
-            speedMultiplier += 0.25;
-            playLevelUp();
-            for (const zz of zombies) zz.speed = (0.9 + Math.random() * 0.6) * speedMultiplier;
-          }
-          updateHUD();
+          // 击杀触发的难度提升在下一帧 update 里统一判定
+          hit = true;
           break;
+        }
+      }
+      if (hit) continue;
+
+      // 玩家子弹 ↔ BOSS
+      if (boss && boss.hp > 0) {
+        if (Math.hypot(b.x - boss.x, b.y - boss.y) < b.radius + boss.radius) {
+          bullets.splice(i, 1);
+          boss.hp--;
+          boss.hitFlash = 120;
+          playBossHurt();
+          spawnParticles(b.x, b.y, '#ffcf5c', 6);
+          updateHUD();
+
+          if (boss.hp <= 0) {
+            // BOSS 死亡
+            playBossDie();
+            spawnParticles(boss.x, boss.y, '#ff2f5e', 40);
+            spawnParticles(boss.x, boss.y, '#ffcf5c', 30);
+            spawnFloatText(boss.x, boss.y, 'BOSS 击杀！', '#ffcf5c');
+            // 奖励：大量击杀数 + 清空场上 BOSS 子弹
+            kills += 10;
+            bossBullets = [];
+            boss = null;
+            bossBarWrap.classList.remove('active');
+            updateHUD();
+          }
         }
       }
     }
 
-    // ========== 道具：碰撞检测 + 拾取 + 移除 ==========
-    // 倒序遍历，保证 splice 安全
+    // 道具：碰撞检测 + 拾取 + 移除
     for (let i = items.length - 1; i >= 0; i--) {
       const item = items[i];
-
-      // 倒计时 / 消失
       item.life -= dt / 1000;
       item.bob += 0.12;
-      if (item.life <= 0) {
-        items.splice(i, 1);
-        continue;
-      }
+      if (item.life <= 0) { items.splice(i, 1); continue; }
 
-      // 计算玩家与道具的距离（用平方距离，避免开方误差）
       const dx = player.x - item.x;
       const dy = player.y - item.y;
-      const distSq = dx * dx + dy * dy;
-
-      // 碰到就自动拾取
-      if (distSq <= PICKUP_DIST_SQ) {
-        pickupItem(item);      // 1. 先结算效果（加血/加速/升级）
-        items.splice(i, 1);    // 2. 立即从数组移除，屏幕消失
+      if (dx * dx + dy * dy <= PICKUP_DIST_SQ) {
+        pickupItem(item);
+        items.splice(i, 1);
       }
     }
 
@@ -516,7 +738,7 @@
       if (p.life <= 0) particles.splice(i, 1);
     }
 
-    // 飘字（向上飘 + 淡出）
+    // 飘字
     for (let i = floatTexts.length - 1; i >= 0; i--) {
       const f = floatTexts[i];
       f.y += f.vy;
@@ -588,12 +810,77 @@
     }
   }
 
+  function drawBoss() {
+    if (!boss || boss.hp <= 0) return;
+    const bx = boss.x, by = boss.y;
+
+    // 危险红雾
+    const g = ctx.createRadialGradient(bx, by, 4, bx, by, boss.radius * 2.4);
+    g.addColorStop(0, 'rgba(255, 47, 94, 0.45)');
+    g.addColorStop(1, 'rgba(255, 47, 94, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(bx, by, boss.radius * 2.4, 0, Math.PI * 2); ctx.fill();
+
+    // 旋转危险环
+    const t = performance.now() / 1000;
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(t);
+    ctx.strokeStyle = 'rgba(255, 47, 94, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.arc(0, 0, boss.radius + 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+
+    // BOSS 本体（大号丧尸 emoji）
+    ctx.save();
+    if (boss.hitFlash > 0) {
+      ctx.globalAlpha = 0.85;
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 30;
+    } else {
+      ctx.shadowColor = '#ff2f5e';
+      ctx.shadowBlur = 20;
+    }
+    ctx.font = '96px serif';   // 普通 26px 的约 3 倍多，视觉足够巨大
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🧟‍♂️', bx, by);
+    ctx.restore();
+
+    // 剩余血量数字
+    ctx.save();
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffcf5c';
+    ctx.shadowColor = '#ffaa00';
+    ctx.shadowBlur = 8;
+    ctx.fillText('HP ' + boss.hp + '/' + boss.maxHp, bx, by + boss.radius + 20);
+    ctx.restore();
+  }
+
   function drawBullets() {
     for (const b of bullets) {
       ctx.save();
       ctx.shadowColor = '#00ffe0';
       ctx.shadowBlur = 12;
       ctx.fillStyle = '#b3fff0';
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawBossBullets() {
+    for (const b of bossBullets) {
+      ctx.save();
+      ctx.shadowColor = '#ff2f5e';
+      ctx.shadowBlur = 18;
+      const g = ctx.createRadialGradient(b.x, b.y, 1, b.x, b.y, b.radius);
+      g.addColorStop(0, '#ffd0d8');
+      g.addColorStop(0.5, '#ff2f5e');
+      g.addColorStop(1, '#7a001a');
+      ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
@@ -613,7 +900,6 @@
       ctx.fillText(DROP_EMOJI[item.type], item.x, item.y + bobY);
       ctx.restore();
 
-      // 剩余时间圈
       const lifePct = Math.max(0, Math.min(1, item.life / 12));
       ctx.save();
       ctx.strokeStyle = col;
@@ -679,7 +965,9 @@
     drawGrid();
     drawItems();
     drawZombies();
+    drawBoss();
     drawBullets();
+    drawBossBullets();
     drawPlayer();
     drawParticles();
     drawFloatTexts();
