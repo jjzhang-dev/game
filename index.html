@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>暗夜尸潮 · 手机适配版</title>
+  <title>暗夜尸潮 · 竖屏版</title>
   <style>
     * {
       margin: 0;
@@ -11,73 +11,112 @@
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
     }
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #0a0c0e;
+      background: #000;
       touch-action: none;
       overscroll-behavior: none;
       font-family: 'Courier New', Courier, monospace;
     }
-    /* 舞台：撑满屏幕，居中放画布 */
-    #stage {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #060809;
-    }
+    /* 画布：宽=屏幕宽，高=屏幕高80%，贴顶 */
     #gameCanvas {
       display: block;
       background: #14181c;
-      box-shadow: 0 0 0 3px #1e1a1a, 0 0 30px #8b0000;
-      /* 尺寸由 JS 控制，保持比例 */
+      box-shadow: 0 0 30px #8b0000;
     }
-
-    /* ===== HUD 浮层 ===== */
-    #hud {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-    #hudInner {
-      position: relative;
-      pointer-events: none;
-    }
-    .hud-top {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+    /* 底部控制栏：占据屏幕下方20% */
+    #controls {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 20%;
+      background: #0a0c0e;
+      border-top: 2px solid #3a1f1f;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 6px 16px;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+    }
+    /* 摇杆 */
+    #joystick {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(60, 80, 90, 0.25);
+      border: 2px solid rgba(120, 160, 180, 0.5);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+    #joystickKnob {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #9bc4d4, #3a5a6a);
+      border: 2px solid #7fb0c4;
+      box-shadow: 0 0 12px rgba(120, 180, 210, 0.7);
+      will-change: transform;
+    }
+    /* 射击按钮 */
+    #fireButton {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #d94a4a, #7a1010);
+      border: 3px solid #e77;
+      box-shadow: 0 0 20px rgba(230, 50, 50, 0.7), inset 0 0 18px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      color: #ffe0e0;
+      touch-action: none;
+      transition: transform 0.05s;
+    }
+    #fireButton.pressed {
+      transform: scale(0.9);
+      box-shadow: 0 0 28px rgba(255, 80, 80, 0.9), inset 0 0 18px rgba(0,0,0,0.6);
+    }
+
+    /* ===== HUD 浮层（贴在画布上方） ===== */
+    #hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+    }
+    .hud-top {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 14px;
       background: rgba(20, 24, 28, 0.85);
       border-radius: 40px;
       border: 1px solid #5e3737;
-      box-shadow: 0 0 16px rgba(139, 0, 0, 0.5);
+      box-shadow: 0 0 14px rgba(139, 0, 0, 0.5);
       color: #c0b9b0;
       font-weight: bold;
+      font-size: 0.85rem;
       white-space: nowrap;
       pointer-events: auto;
     }
-    .hp-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
     .hp-fill {
-      width: 130px;
-      height: 14px;
+      width: 90px;
+      height: 12px;
       background: #2b1e1e;
       border-radius: 20px;
       overflow: hidden;
@@ -91,361 +130,93 @@
       background: linear-gradient(90deg, #b30000, #e63946);
       border-radius: 20px;
       transition: width 0.15s ease;
-      box-shadow: 0 0 16px #ff4d4d;
     }
-    .stat {
-      color: #d4af37;
-      text-shadow: 0 0 10px #a67c00;
-      font-size: 1rem;
-    }
-    .stat.level {
-      color: #c084fc;
-      text-shadow: 0 0 10px #7e22ce;
-    }
+    .stat { color: #d4af37; }
+    .stat.level { color: #c084fc; }
     #restartBtn {
       background: #1e1212;
       border: 1px solid #6b3a3a;
       color: #ddbbbb;
       font-weight: bold;
-      padding: 5px 14px;
+      padding: 4px 12px;
       border-radius: 40px;
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.9rem;
-      box-shadow: 0 0 12px #3f1f1f;
+      font-size: 0.8rem;
       pointer-events: auto;
     }
-    #restartBtn:active {
-      background: #3a1f1f;
-      color: #fff;
-    }
-
-    /* ===== 触屏控件 ===== */
-    #touchControls {
-      position: fixed;
-      display: none;
-      pointer-events: none;
-      z-index: 50;
-    }
-    #touchControls.active {
-      display: block;
-    }
-    /* 左摇杆 */
-    #joystick {
-      position: absolute;
-      left: 20px;
-      bottom: 20px;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: rgba(60, 80, 90, 0.22);
-      border: 2px solid rgba(120, 160, 180, 0.45);
-      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.5);
-      pointer-events: auto;
-      touch-action: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #joystickKnob {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #9bc4d4, #3a5a6a);
-      border: 2px solid #7fb0c4;
-      box-shadow: 0 0 14px rgba(120, 180, 210, 0.7);
-      will-change: transform;
-    }
-    /* 右射击键 */
-    #fireButton {
-      position: absolute;
-      right: 24px;
-      bottom: 28px;
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #d94a4a, #7a1010);
-      border: 3px solid #e77;
-      box-shadow: 0 0 22px rgba(230, 50, 50, 0.7), inset 0 0 20px rgba(0,0,0,0.5);
-      pointer-events: auto;
-      touch-action: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 2rem;
-      color: #ffe0e0;
-      font-weight: bold;
-      transition: transform 0.05s;
-    }
-    #fireButton.pressed {
-      transform: scale(0.92);
-      box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), inset 0 0 20px rgba(0,0,0,0.6);
-    }
-
-    /* ===== 横屏提示 ===== */
-    #orientationNotice {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(6, 8, 10, 0.97);
-      z-index: 999;
-      color: #c0b9b0;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-      text-align: center;
-      padding: 30px;
-    }
-    #orientationNotice.show { display: flex; }
-    #orientationNotice .icon {
-      font-size: 4rem;
-      animation: rotatePhone 2s ease-in-out infinite;
-    }
-    #orientationNotice h2 {
-      font-size: 1.6rem;
-      color: #e63946;
-      text-shadow: 0 0 20px rgba(230, 50, 70, 0.7);
-    }
-    #orientationNotice p { color: #8a7a7a; font-size: 1rem; }
-    @keyframes rotatePhone {
-      0%, 100% { transform: rotate(0deg); }
-      50% { transform: rotate(90deg); }
-    }
+    #restartBtn:active { background: #3a1f1f; color: #fff; }
   </style>
 </head>
 <body>
 
-<div id="stage">
-  <canvas id="gameCanvas" width="900" height="600"></canvas>
+<canvas id="gameCanvas"></canvas>
 
-  <!-- HUD -->
-  <div id="hud">
-    <div id="hudInner">
-      <div class="hud-top">
-        <div class="hp-bar">
-          <span>❤️</span>
-          <div class="hp-fill"><span id="hpBarFill" style="width:100%"></span></div>
-        </div>
-        <div class="stat">🔫 <span id="killCount">0</span></div>
-        <div class="stat level">⭐ <span id="levelDisplay">1</span></div>
-        <button id="restartBtn">⟲ 重来</button>
-      </div>
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span>❤️</span>
+      <div class="hp-fill"><span id="hpBarFill" style="width:100%"></span></div>
     </div>
-  </div>
-
-  <!-- 触屏控件 -->
-  <div id="touchControls">
-    <div id="joystick"><div id="joystickKnob"></div></div>
-    <div id="fireButton">🔫</div>
+    <div class="stat">🔫 <span id="killCount">0</span></div>
+    <div class="stat level">⭐ <span id="levelDisplay">1</span></div>
+    <button id="restartBtn">⟲ 重来</button>
   </div>
 </div>
 
-<!-- 横屏提示 -->
-<div id="orientationNotice">
-  <div class="icon">📱</div>
-  <h2>请横屏游玩体验更好</h2>
-  <p>旋转你的设备，用横屏模式对抗尸潮吧</p>
+<!-- 底部控制栏 -->
+<div id="controls">
+  <div id="joystick"><div id="joystickKnob"></div></div>
+  <div id="fireButton">🔫</div>
 </div>
 
 <script>
 (function() {
   'use strict';
 
-  // ---------- 逻辑分辨率 ----------
-  const W = 900, H = 600;
-
-  // ---------- 画布 ----------
+  // =========================================================
+  // 画布尺寸：宽 = 屏幕宽，高 = 屏幕高 * 0.8
+  // =========================================================
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = W;
-  canvas.height = H;
 
-  // ---------- DOM ----------
-  const stage = document.getElementById('stage');
-  const hudInner = document.getElementById('hudInner');
-  const hpBarFill = document.getElementById('hpBarFill');
-  const killCountSpan = document.getElementById('killCount');
-  const levelDisplay = document.getElementById('levelDisplay');
-  const restartBtn = document.getElementById('restartBtn');
-  const touchControls = document.getElementById('touchControls');
-  const joystick = document.getElementById('joystick');
-  const joystickKnob = document.getElementById('joystickKnob');
-  const fireButton = document.getElementById('fireButton');
-  const orientationNotice = document.getElementById('orientationNotice');
-
-  // ---------- 设备检测 ----------
-  const isTouchDevice = ('ontouchstart' in window) ||
-                        (navigator.maxTouchPoints > 0) ||
-                        (navigator.msMaxTouchPoints > 0) ||
-                        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-  const isMobile = isTouchDevice && Math.min(window.innerWidth, window.innerHeight) < 820;
-
-  // =========================================================
-  // 音效（首触初始化）
-  // =========================================================
-  let audioCtx = null;
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  }
-  function playShootSound() {
-    initAudio(); if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const bufferSize = audioCtx.sampleRate * 0.08;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/bufferSize, 2.5);
-    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-    const nf = audioCtx.createBiquadFilter(); nf.type='highpass'; nf.frequency.value=800;
-    const ng = audioCtx.createGain();
-    ng.gain.setValueAtTime(0.25, now); ng.gain.exponentialRampToValueAtTime(0.001, now+0.08);
-    noise.connect(nf); nf.connect(ng); ng.connect(audioCtx.destination);
-    noise.start(now); noise.stop(now+0.1);
-    const osc = audioCtx.createOscillator(); const og = audioCtx.createGain();
-    osc.type='square'; osc.frequency.setValueAtTime(280, now);
-    osc.frequency.exponentialRampToValueAtTime(90, now+0.05);
-    og.gain.setValueAtTime(0.12, now); og.gain.exponentialRampToValueAtTime(0.001, now+0.07);
-    osc.connect(og); og.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now+0.08);
-  }
-  function playZombieDeathSound() {
-    initAudio(); if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    osc.type='sawtooth'; osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now+0.25);
-    g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.3);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now+0.3);
-    const bufferSize = audioCtx.sampleRate * 0.15;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random()*2-1)*Math.pow(1-i/bufferSize,1.8)*0.4;
-    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-    const nf = audioCtx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=500;
-    const ng = audioCtx.createGain();
-    ng.gain.setValueAtTime(0.1, now); ng.gain.exponentialRampToValueAtTime(0.001, now+0.2);
-    noise.connect(nf); nf.connect(ng); ng.connect(audioCtx.destination);
-    noise.start(now); noise.stop(now+0.22);
-  }
-  function playPickupSound() {
-    initAudio(); if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    osc.type='sine'; osc.frequency.setValueAtTime(660, now);
-    osc.frequency.setValueAtTime(880, now+0.08);
-    g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.2);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now+0.2);
-  }
-  function playLevelUpSound() {
-    initAudio(); if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    [523, 659, 784].forEach((freq, i) => {
-      const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-      osc.type='triangle'; osc.frequency.value = freq;
-      g.gain.setValueAtTime(0.12, now + i*0.07);
-      g.gain.exponentialRampToValueAtTime(0.001, now + i*0.07 + 0.25);
-      osc.connect(g); g.connect(audioCtx.destination);
-      osc.start(now + i*0.07); osc.stop(now + i*0.07 + 0.25);
-    });
-  }
-
-  // =========================================================
-  // 自适应缩放（保持 900:600 = 1.5 比例，居中留黑边）
-  // =========================================================
-  let scale = 1, canvasLeft = 0, canvasTop = 0, displayW = W, displayH = H;
+  let W = window.innerWidth;
+  let H = Math.floor(window.innerHeight * 0.8);
 
   function resizeCanvas() {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const targetRatio = W / H; // 1.5
-
-    if (vw / vh > targetRatio) {
-      displayH = vh;
-      displayW = displayH * targetRatio;
-    } else {
-      displayW = vw;
-      displayH = displayW / targetRatio;
-    }
-    canvasLeft = (vw - displayW) / 2;
-    canvasTop = (vh - displayH) / 2;
-    scale = displayW / W;
-
-    canvas.style.width = displayW + 'px';
-    canvas.style.height = displayH + 'px';
-
-    // HUD 同步
-    hudInner.style.width = displayW + 'px';
-    hudInner.style.height = displayH + 'px';
-
-    // 触控控件范围同步到画布区域
-    touchControls.style.left = canvasLeft + 'px';
-    touchControls.style.top = canvasTop + 'px';
-    touchControls.style.width = displayW + 'px';
-    touchControls.style.height = displayH + 'px';
-
-    // 控件大小按比例
-    const uiScale = Math.min(1.5, Math.max(0.7, displayW / 900));
-    const jSize = 110 * uiScale;
-    joystick.style.width = jSize + 'px';
-    joystick.style.height = jSize + 'px';
-    joystick.style.left = (18 * uiScale) + 'px';
-    joystick.style.bottom = (18 * uiScale) + 'px';
-    const knobSize = 50 * uiScale;
-    joystickKnob.style.width = knobSize + 'px';
-    joystickKnob.style.height = knobSize + 'px';
-    const fSize = 90 * uiScale;
-    fireButton.style.width = fSize + 'px';
-    fireButton.style.height = fSize + 'px';
-    fireButton.style.right = (22 * uiScale) + 'px';
-    fireButton.style.bottom = (24 * uiScale) + 'px';
-    fireButton.style.fontSize = (1.8 * uiScale) + 'rem';
-
-    // HUD 字号
-    const hs = Math.min(1.2, Math.max(0.7, displayW / 900));
-    document.querySelector('.hp-fill').style.width = (130 * hs) + 'px';
-    document.querySelectorAll('.stat').forEach(el => el.style.fontSize = (0.95 * hs) + 'rem');
-    restartBtn.style.fontSize = (0.85 * hs) + 'rem';
-
-    checkOrientation();
-  }
-
-  function checkOrientation() {
-    if (!isMobile) { orientationNotice.classList.remove('show'); return; }
-    if (window.innerHeight > window.innerWidth) {
-      orientationNotice.classList.add('show');
-    } else {
-      orientationNotice.classList.remove('show');
+    W = window.innerWidth;
+    H = Math.floor(window.innerHeight * 0.8);
+    canvas.width = W;
+    canvas.height = H;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    // 保证玩家在底部
+    if (player) {
+      player.y = H - 50;
+      player.x = Math.min(player.x, W - 30);
+      player.x = Math.max(player.x, 30);
     }
   }
 
   // =========================================================
-  // 游戏状态（保持原逻辑）
+  // 游戏状态
   // =========================================================
   let gameActive = true;
 
-  const PLAYER_RADIUS = 18;
   let player = {
-    x: W / 2, y: H / 2,
-    radius: PLAYER_RADIUS,
-    speed: 3.4,
-    hp: 100, maxHp: 100,
-    // 摇杆输入 (-1~1)
-    inputX: 0, inputY: 0
+    x: W / 2,
+    y: H - 50,
+    radius: 18,
+    speed: 4,
+    hp: 100,
+    maxHp: 100
   };
 
-  // 键盘
-  const keys = { w:false,a:false,s:false,d:false,up:false,down:false,left:false,right:false };
-
-  // 瞄准角度（摇杆/键盘模式下由移动方向决定；鼠标模式下由鼠标决定）
-  let aimAngle = 0;
-
-  // 鼠标（桌面）
-  let mouse = { x: player.x, y: player.y };
-  let mouseActive = false;
+  // 摇杆输入
+  let inputX = 0, inputY = 0;
+  // 瞄准角度（默认朝上）
+  let aimAngle = -Math.PI / 2;
 
   let zombies = [];
   let bullets = [];
@@ -460,28 +231,94 @@
   let lastTimestamp = 0;
 
   let lastShotTime = 0;
-  const SHOT_COOLDOWN = 170;
+  const SHOT_COOLDOWN = 180;
 
-  let mouseDown = false;      // 桌面端按住射击
-  let fireHeld = false;       // 触屏端按住射击
+  let fireHeld = false;
 
   let hasShotgun = false;
   let shotgunTimer = 0;
   const SHOTGUN_DURATION = 8000;
 
+  // DOM
+  const hpBarFill = document.getElementById('hpBarFill');
+  const killCountSpan = document.getElementById('killCount');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const restartBtn = document.getElementById('restartBtn');
+  const joystick = document.getElementById('joystick');
+  const joystickKnob = document.getElementById('joystickKnob');
+  const fireButton = document.getElementById('fireButton');
+
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
   function distance(x1,y1,x2,y2){ return Math.hypot(x2-x1, y2-y1); }
 
-  function updateHpBar() {
-    hpBarFill.style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
+  // =========================================================
+  // 音效
+  // =========================================================
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function playShootSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const bufferSize = Math.floor(audioCtx.sampleRate * 0.07);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random()*2-1)*Math.pow(1-i/bufferSize, 2.5);
+    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+    const nf = audioCtx.createBiquadFilter(); nf.type='highpass'; nf.frequency.value=800;
+    const ng = audioCtx.createGain();
+    ng.gain.setValueAtTime(0.2, now); ng.gain.exponentialRampToValueAtTime(0.001, now+0.07);
+    noise.connect(nf); nf.connect(ng); ng.connect(audioCtx.destination);
+    noise.start(now); noise.stop(now+0.08);
+  }
+  function playZombieDeathSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    osc.type='sawtooth'; osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now+0.22);
+    g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.25);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+0.25);
+  }
+  function playPickupSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    osc.type='sine'; osc.frequency.setValueAtTime(660, now);
+    osc.frequency.setValueAtTime(880, now+0.08);
+    g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.18);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+0.18);
+  }
+  function playLevelUpSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      osc.type='triangle'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.1, now + i*0.07);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i*0.07 + 0.22);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(now + i*0.07); osc.stop(now + i*0.07 + 0.22);
+    });
   }
 
-  // ---------- 重置 ----------
+  // =========================================================
+  // 重置
+  // =========================================================
   function resetGame() {
     gameActive = true;
     player = {
-      x: W/2, y: H/2, radius: PLAYER_RADIUS, speed: 3.4,
-      hp: 100, maxHp: 100, inputX: 0, inputY: 0
+      x: W / 2, y: H - 50,
+      radius: 18, speed: 4,
+      hp: 100, maxHp: 100
     };
     zombies = []; bullets = []; pickups = [];
     killCount = 0; currentLevel = 1; speedMultiplier = 1.0;
@@ -491,131 +328,135 @@
     lastZombieSpawn = 0;
     zombieSpawnInterval = 1200;
     hasShotgun = false; shotgunTimer = 0;
-    aimAngle = 0;
-    mouse = { x: player.x + 30, y: player.y };
-    mouseActive = false;
-    mouseDown = false;
+    aimAngle = -Math.PI / 2;
+    inputX = 0; inputY = 0;
     fireHeld = false;
-    keys.w = keys.a = keys.s = keys.d = false;
-    keys.up = keys.down = keys.left = keys.right = false;
-    resetJoystick();
+    joystickKnob.style.transform = 'translate(0px, 0px)';
 
-    for (let i = 0; i < 3; i++) spawnZombie(true);
-    updateHpBar();
+    for (let i = 0; i < 3; i++) spawnZombie();
     draw();
   }
 
-  // ---------- 生成丧尸 ----------
+  function updateHpBar() {
+    hpBarFill.style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
+  }
+
+  // =========================================================
+  // 生成丧尸（从上方和两侧进入）
+  // =========================================================
   function spawnZombie() {
-    const edge = Math.floor(Math.random()*4);
     let x, y;
-    const pad = 50;
-    switch (edge) {
-      case 0: x = Math.random()*W; y = -pad; break;
-      case 1: x = W + pad; y = Math.random()*H; break;
-      case 2: x = Math.random()*W; y = H + pad; break;
-      default: x = -pad; y = Math.random()*H; break;
+    const r = Math.random();
+    if (r < 0.6) {
+      // 从上方进入
+      x = Math.random() * W;
+      y = -30;
+    } else if (r < 0.8) {
+      // 左侧
+      x = -30;
+      y = Math.random() * (H * 0.6);
+    } else {
+      // 右侧
+      x = W + 30;
+      y = Math.random() * (H * 0.6);
     }
-    let tries = 0;
-    while (distance(x,y,player.x,player.y) < 220 && tries < 15) {
-      x = Math.random()*W; y = Math.random()*H; tries++;
-    }
-    const baseSpeed = 0.75 + Math.random()*0.6;
+    const baseSpeed = 0.6 + Math.random() * 0.5;
     zombies.push({
       x, y, radius: 16,
       speed: baseSpeed * speedMultiplier,
       baseSpeed: baseSpeed,
       hp: 1, flash: 0,
-      wobble: Math.random()*Math.PI*2,
-      phase: Math.random()*10
+      wobble: Math.random() * Math.PI * 2,
+      phase: Math.random() * 10
     });
   }
 
-  // ---------- 射击 ----------
+  // =========================================================
+  // 射击
+  // =========================================================
   function shoot(now) {
     if (!gameActive) return;
     if (now - lastShotTime < SHOT_COOLDOWN) return;
     lastShotTime = now;
     playShootSound();
 
+    // 自动瞄准最近的丧尸（如果存在）
+    let targetAngle = aimAngle;
+    if (zombies.length > 0) {
+      let closest = null;
+      let closestDist = Infinity;
+      for (const z of zombies) {
+        const d = distance(player.x, player.y, z.x, z.y);
+        if (d < closestDist) { closestDist = d; closest = z; }
+      }
+      if (closest) {
+        targetAngle = Math.atan2(closest.y - player.y, closest.x - player.x);
+      }
+    }
+
     if (hasShotgun) {
-      const baseAngle = aimAngle;
       const spread = 0.35, count = 5;
       for (let i = 0; i < count; i++) {
-        const offset = (i-(count-1)/2) * (spread/(count-1)) * 2;
-        createBullet(baseAngle + offset);
+        const offset = (i - (count-1)/2) * (spread/(count-1)) * 2;
+        createBullet(targetAngle + offset);
       }
     } else {
-      createBullet(aimAngle);
+      createBullet(targetAngle);
     }
   }
+
   function createBullet(angle) {
-    const speed = 9;
+    const speed = 10;
     const offset = 20;
     bullets.push({
-      x: player.x + Math.cos(angle)*offset,
-      y: player.y + Math.sin(angle)*offset,
-      vx: Math.cos(angle)*speed,
-      vy: Math.sin(angle)*speed,
-      radius: 6, life: 100, damage: 1
+      x: player.x + Math.cos(angle) * offset,
+      y: player.y + Math.sin(angle) * offset,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius: 6,
+      life: 80,
+      damage: 1
     });
   }
 
-  // ---------- 更新玩家 ----------
+  // =========================================================
+  // 更新
+  // =========================================================
   function updatePlayer() {
-    let dx = 0, dy = 0;
-    // 键盘
-    if (keys.w || keys.up) dy -= 1;
-    if (keys.s || keys.down) dy += 1;
-    if (keys.a || keys.left) dx -= 1;
-    if (keys.d || keys.right) dx += 1;
-
-    // 摇杆优先（非零时覆盖）
-    if (Math.abs(player.inputX) > 0.01 || Math.abs(player.inputY) > 0.01) {
-      dx = player.inputX;
-      dy = player.inputY;
-    }
-
+    // 摇杆输入
+    let dx = inputX, dy = inputY;
     if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);
       dx /= len; dy /= len;
       player.x += dx * player.speed;
       player.y += dy * player.speed;
-
-      // 触屏/键盘模式下，自动朝移动方向瞄准
-      if (!mouseActive) {
-        aimAngle = Math.atan2(dy, dx);
-      }
     }
-
-    const pad = 22;
-    player.x = clamp(player.x, pad, W - pad);
-    player.y = clamp(player.y, pad, H - pad);
+    // 边界
+    player.x = clamp(player.x, player.radius, W - player.radius);
+    // 竖直限制在画布内，但主要活动范围中下部
+    player.y = clamp(player.y, player.radius + 30, H - player.radius);
   }
 
-  // ---------- 更新丧尸 ----------
   function updateZombies(dt) {
     const d = dt / 16.67;
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const angle = Math.atan2(player.y - z.y, player.x - z.x);
       z.wobble += 0.07;
-      const wob = Math.sin(z.wobble) * 0.28;
-      const moveAngle = angle + wob*0.22;
-      const spd = z.speed * d * 1.55;
-      z.x += Math.cos(moveAngle)*spd;
-      z.y += Math.sin(moveAngle)*spd;
-      z.x = clamp(z.x, -40, W+40);
-      z.y = clamp(z.y, -40, H+40);
+      const wob = Math.sin(z.wobble) * 0.25;
+      const spd = z.speed * d * 1.3;
+      z.x += Math.cos(angle + wob*0.2) * spd;
+      z.y += Math.sin(angle + wob*0.2) * spd;
 
-      if (z.flash > 0) { z.flash -= 0.05*d; if (z.flash < 0) z.flash = 0; }
+      if (z.flash > 0) { z.flash -= 0.05 * d; if (z.flash < 0) z.flash = 0; }
 
       if (distance(z.x, z.y, player.x, player.y) < z.radius + player.radius) {
-        player.hp = Math.max(0, player.hp - 1.0*d);
+        player.hp = Math.max(0, player.hp - 1.0 * d);
         updateHpBar();
-        const ka = Math.atan2(z.y-player.y, z.x-player.x);
-        z.x += Math.cos(ka)*2.8;
-        z.y += Math.sin(ka)*2.8;
+        // 击退
+        const ka = Math.atan2(z.y - player.y, z.x - player.x);
+        z.x += Math.cos(ka) * 2.5;
+        z.y += Math.sin(ka) * 2.5;
         if (player.hp <= 0) {
           player.hp = 0; updateHpBar();
           gameActive = false; return;
@@ -624,21 +465,20 @@
     }
   }
 
-  // ---------- 更新子弹 ----------
   function updateBullets() {
-    for (let i = bullets.length-1; i >= 0; i--) {
+    for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx; b.y += b.vy; b.life--;
-      if (b.x < -30 || b.x > W+30 || b.y < -30 || b.y > H+30 || b.life <= 0) {
-        bullets.splice(i,1); continue;
+      if (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30 || b.life <= 0) {
+        bullets.splice(i, 1); continue;
       }
       let hit = false;
-      for (let j = zombies.length-1; j >= 0; j--) {
+      for (let j = zombies.length - 1; j >= 0; j--) {
         const z = zombies[j];
-        if (distance(b.x,b.y,z.x,z.y) < z.radius + b.radius) {
+        if (distance(b.x, b.y, z.x, z.y) < z.radius + b.radius) {
           z.hp -= b.damage; z.flash = 1.0; hit = true;
           if (z.hp <= 0) {
-            zombies.splice(j,1);
+            zombies.splice(j, 1);
             killCount++; killCountSpan.textContent = killCount;
             playZombieDeathSound();
 
@@ -646,16 +486,14 @@
               const dropType = Math.random() < 0.5 ? 'health' : 'shotgun';
               pickups.push({
                 x: z.x, y: z.y, radius: 14,
-                type: dropType, life: 12000, bob: Math.random()*Math.PI*2
+                type: dropType, life: 12000, bob: Math.random() * Math.PI * 2
               });
             }
             if (killCount > 0 && killCount % 10 === 0) {
               currentLevel++;
               speedMultiplier += 0.25;
               levelDisplay.textContent = currentLevel;
-              zombies.forEach(zz => {
-                zz.speed = (zz.baseSpeed || 0.9) * speedMultiplier;
-              });
+              zombies.forEach(zz => { zz.speed = (zz.baseSpeed || 0.8) * speedMultiplier; });
               zombieSpawnInterval = Math.max(400, zombieSpawnInterval - 120);
               playLevelUpSound();
             }
@@ -663,16 +501,15 @@
           break;
         }
       }
-      if (hit) bullets.splice(i,1);
+      if (hit) bullets.splice(i, 1);
     }
   }
 
-  // ---------- 掉落物 ----------
   function updatePickups(dt) {
-    for (let i = pickups.length-1; i >= 0; i--) {
+    for (let i = pickups.length - 1; i >= 0; i--) {
       const p = pickups[i];
       p.life -= dt; p.bob += 0.05;
-      if (distance(p.x,p.y,player.x,player.y) < p.radius + player.radius + 8) {
+      if (distance(p.x, p.y, player.x, player.y) < p.radius + player.radius + 8) {
         if (p.type === 'health') {
           player.hp = Math.min(player.maxHp, player.hp + 30);
           updateHpBar();
@@ -680,9 +517,9 @@
           hasShotgun = true; shotgunTimer = SHOTGUN_DURATION;
         }
         playPickupSound();
-        pickups.splice(i,1); continue;
+        pickups.splice(i, 1); continue;
       }
-      if (p.life <= 0) pickups.splice(i,1);
+      if (p.life <= 0) pickups.splice(i, 1);
     }
     if (hasShotgun) {
       shotgunTimer -= dt;
@@ -690,14 +527,13 @@
     }
   }
 
-  // ---------- 生成 ----------
   function spawnZombiesByTime(now) {
     if (!gameActive) return;
     if (now - lastZombieSpawn > zombieSpawnInterval) {
       lastZombieSpawn = now;
       spawnZombie();
-      if (Math.random() < 0.3 && zombies.length < 35) spawnZombie();
-      if (currentLevel > 3 && Math.random() < 0.2 && zombies.length < 40) spawnZombie();
+      if (Math.random() < 0.3 && zombies.length < 30) spawnZombie();
+      if (currentLevel > 3 && Math.random() < 0.2 && zombies.length < 35) spawnZombie();
     }
   }
 
@@ -705,9 +541,9 @@
   // 绘制
   // =========================================================
   function draw() {
-    ctx.clearRect(0,0,W,H);
+    // 背景
     ctx.fillStyle = '#12181c';
-    ctx.fillRect(0,0,W,H);
+    ctx.fillRect(0, 0, W, H);
 
     // 地砖
     const tile = 50;
@@ -715,114 +551,87 @@
       for (let tx = 0; tx < W; tx += tile) {
         const alt = ((tx/tile)+(ty/tile)) % 2 === 0;
         ctx.fillStyle = alt ? '#161e24' : '#121920';
-        ctx.fillRect(tx,ty,tile,tile);
+        ctx.fillRect(tx, ty, tile, tile);
       }
     }
     // 网格
     ctx.strokeStyle = '#1f2a30'; ctx.lineWidth = 0.8;
     for (let i = 0; i <= W; i += tile) {
-      ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
     }
     for (let i = 0; i <= H; i += tile) {
-      ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(W,i); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
     }
-    // 血迹
-    for (let i = 0; i < 20; i++) {
-      const sx = (i*173+37)%W, sy = (i*291+83)%H;
-      const r = 8 + (i%5)*6;
-      ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2);
-      ctx.fillStyle = i%3===0 ? '#1e1515' : '#231919'; ctx.fill();
-      for (let k = 0; k < 3; k++) {
-        ctx.beginPath();
-        ctx.arc(sx+(k*13-10)%25, sy+(k*7-5)%20, 2+k, 0, Math.PI*2);
-        ctx.fillStyle = '#1c1212'; ctx.fill();
-      }
-    }
-    // 暗角
-    const grad = ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,600);
-    grad.addColorStop(0,'rgba(0,0,0,0)');
-    grad.addColorStop(1,'rgba(0,0,0,0.55)');
-    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
 
     // 掉落物
     pickups.forEach(p => {
-      const bobY = Math.sin(p.bob)*4;
+      const bobY = Math.sin(p.bob) * 4;
       ctx.font = '28px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.shadowColor = p.type==='health' ? '#44ff88' : '#ffaa44';
-      ctx.shadowBlur = 20;
-      ctx.fillText(p.type==='health' ? '💊' : '🔥', p.x, p.y + bobY);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = p.type === 'health' ? '#44ff88' : '#ffaa44';
+      ctx.shadowBlur = 18;
+      ctx.fillText(p.type === 'health' ? '💊' : '🔥', p.x, p.y + bobY);
       ctx.shadowBlur = 0;
     });
 
     // 丧尸
-    ctx.font = '34px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font = '32px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     zombies.forEach(z => {
-      if (z.flash > 0.1) ctx.filter = `brightness(${1 + z.flash*1.5})`;
+      if (z.flash > 0.1) ctx.filter = `brightness(${1 + z.flash * 1.5})`;
       else ctx.filter = 'none';
-      const bobY = Math.sin(z.phase + Date.now()*0.008)*3;
+      const bobY = Math.sin(z.phase + Date.now() * 0.008) * 3;
       ctx.fillText('🧟‍♂️', z.x, z.y + bobY);
       ctx.filter = 'none';
     });
 
     // 子弹
     bullets.forEach(b => {
-      ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 20;
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
+      ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 16;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
       ctx.fillStyle = '#ffe070'; ctx.fill();
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.radius*0.5,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius * 0.5, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff'; ctx.fill();
     });
     ctx.shadowBlur = 0;
 
     // 玩家
-    ctx.shadowColor = '#44cc88'; ctx.shadowBlur = 25;
-    ctx.beginPath(); ctx.arc(player.x, player.y, player.radius+4, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(80,220,140,0.5)'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.shadowColor = '#44cc88'; ctx.shadowBlur = 22;
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.radius + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(80,220,140,0.55)'; ctx.lineWidth = 2.5; ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.font = '40px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    const pb = Math.sin(Date.now()*0.006)*2;
+    ctx.font = '38px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const pb = Math.sin(Date.now() * 0.006) * 2;
     ctx.fillText('🤠', player.x, player.y + pb);
-
-    // 枪口指示
-    const gx = player.x + Math.cos(aimAngle)*30;
-    const gy = player.y + Math
-    const gy = player.y + Math.sin(aimAngle)*30;
-    ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI*2);
-    ctx.fillStyle = '#ffdd88';
-    ctx.shadowBlur = 15; ctx.shadowColor = '#ffaa33';
-    ctx.fill();
-    ctx.shadowBlur = 0;
 
     // 散弹枪 BUFF 条
     if (hasShotgun) {
-      const barW = 80, barH = 8;
-      const barX = player.x - barW/2, barY = player.y - 42;
-      ctx.fillStyle = '#333';
-      ctx.fillRect(barX, barY, barW, barH);
+      const barW = 70, barH = 7;
+      const barX = player.x - barW / 2, barY = player.y - 40;
+      ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, barH);
       const ratio = shotgunTimer / SHOTGUN_DURATION;
-      ctx.fillStyle = '#ffaa33';
-      ctx.fillRect(barX, barY, barW*ratio, barH);
+      ctx.fillStyle = '#ffaa33'; ctx.fillRect(barX, barY, barW * ratio, barH);
       ctx.strokeStyle = '#ffaa33'; ctx.lineWidth = 1;
       ctx.strokeRect(barX, barY, barW, barH);
     }
 
-    // 游戏结束遮罩
+    // 游戏结束
     if (!gameActive) {
-      ctx.fillStyle = 'rgba(10,0,0,0.8)';
-      ctx.fillRect(0,0,W,H);
-      ctx.font = 'bold 52px "Courier New",monospace';
+      ctx.fillStyle = 'rgba(10,0,0,0.82)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 36px "Courier New",monospace';
       ctx.fillStyle = '#b30000';
-      ctx.shadowBlur = 30; ctx.shadowColor = '#ff0000';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('💀 你被吞噬了', W/2, H/2 - 40);
-      ctx.font = '30px "Courier New"';
+      ctx.shadowBlur = 25; ctx.shadowColor = '#ff0000';
+      ctx.fillText('💀 你被吞噬了', W / 2, H / 2 - 50);
+      ctx.font = '24px "Courier New"';
       ctx.fillStyle = '#d4af37';
-      ctx.fillText(`击杀数: ${killCount}`, W/2, H/2 + 40);
-      ctx.fillText(`关卡: ${currentLevel}`, W/2, H/2 + 90);
       ctx.shadowBlur = 0;
+      ctx.fillText(`击杀: ${killCount}   关卡: ${currentLevel}`, W / 2, H / 2 + 10);
+      ctx.font = '18px "Courier New"';
+      ctx.fillStyle = '#999';
+      ctx.fillText('点击「重来」继续', W / 2, H / 2 + 60);
     }
   }
 
@@ -845,10 +654,7 @@
         gameActive = false; player.hp = 0; updateHpBar();
       }
 
-      // 射击（鼠标按住 或 触屏按住）
-      if (mouseDown || fireHeld) {
-        shoot(timestamp);
-      }
+      if (fireHeld) shoot(timestamp);
     }
 
     draw();
@@ -856,71 +662,57 @@
   }
 
   // =========================================================
-  // 虚拟摇杆
+  // 虚拟摇杆（简单版）
   // =========================================================
   let joystickTouchId = null;
-  let joystickCenter = { x: 0, y: 0 };
-  let joystickMaxDist = 40;
+  let joyCenterX = 0, joyCenterY = 0, joyMax = 40;
 
-  function resetJoystick() {
-    joystickTouchId = null;
-    player.inputX = 0;
-    player.inputY = 0;
-    joystickKnob.style.transform = 'translate(0px, 0px)';
-  }
-
-  function joystickStart(e) {
+  function joyStart(e) {
     e.preventDefault(); e.stopPropagation();
     initAudio();
-    if (!gameActive) return;
     const touch = e.changedTouches[0];
     joystickTouchId = touch.identifier;
     const rect = joystick.getBoundingClientRect();
-    joystickCenter.x = rect.left + rect.width/2;
-    joystickCenter.y = rect.top + rect.height/2;
-    joystickMaxDist = rect.width * 0.36;
-    joystickMove(e);
+    joyCenterX = rect.left + rect.width / 2;
+    joyCenterY = rect.top + rect.height / 2;
+    joyMax = rect.width * 0.35;
+    joyMove(e);
   }
 
-  function joystickMove(e) {
+  function joyMove(e) {
     if (joystickTouchId === null) return;
     e.preventDefault(); e.stopPropagation();
     let touch = null;
     for (let i = 0; i < e.touches.length; i++) {
-      if (e.touches[i].identifier === joystickTouchId) {
-        touch = e.touches[i]; break;
-      }
+      if (e.touches[i].identifier === joystickTouchId) { touch = e.touches[i]; break; }
     }
     if (!touch) return;
-
-    let dx = touch.clientX - joystickCenter.x;
-    let dy = touch.clientY - joystickCenter.y;
+    let dx = touch.clientX - joyCenterX;
+    let dy = touch.clientY - joyCenterY;
     const dist = Math.hypot(dx, dy);
-    if (dist > joystickMaxDist) {
-      dx = (dx/dist) * joystickMaxDist;
-      dy = (dy/dist) * joystickMaxDist;
-    }
+    if (dist > joyMax) { dx = (dx / dist) * joyMax; dy = (dy / dist) * joyMax; }
     joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-
-    const nx = dx / joystickMaxDist;
-    const ny = dy / joystickMaxDist;
+    const nx = dx / joyMax, ny = dy / joyMax;
     const dead = 0.2;
-    player.inputX = Math.abs(nx) > dead ? nx : 0;
-    player.inputY = Math.abs(ny) > dead ? ny : 0;
+    inputX = Math.abs(nx) > dead ? nx : 0;
+    inputY = Math.abs(ny) > dead ? ny : 0;
   }
 
-  function joystickEnd(e) {
+  function joyEnd(e) {
     if (joystickTouchId === null) return;
     e.preventDefault(); e.stopPropagation();
     for (let i = 0; i < e.changedTouches.length; i++) {
       if (e.changedTouches[i].identifier === joystickTouchId) {
-        resetJoystick(); break;
+        joystickTouchId = null;
+        inputX = 0; inputY = 0;
+        joystickKnob.style.transform = 'translate(0px, 0px)';
+        break;
       }
     }
   }
 
   // =========================================================
-  // 射击按钮（按住即开火）
+  // 射击按钮
   // =========================================================
   let fireTouchId = null;
 
@@ -932,7 +724,6 @@
     fireTouchId = touch.identifier;
     fireHeld = true;
     fireButton.classList.add('pressed');
-    // 立即开火一次
     shoot(performance.now());
   }
 
@@ -950,127 +741,39 @@
   }
 
   // =========================================================
-  // 鼠标（桌面端）
-  // =========================================================
-  function onMouseMove(e) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width / rect.width;
-    const sy = canvas.height / rect.height;
-    const cx = (e.clientX - rect.left) * sx;
-    const cy = (e.clientY - rect.top) * sy;
-    mouse.x = clamp(cx, 0, W);
-    mouse.y = clamp(cy, 0, H);
-    mouseActive = true;
-    aimAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-  }
-  function onMouseDown(e) {
-    e.preventDefault();
-    initAudio();
-    if (e.button === 0) {
-      mouseDown = true;
-      if (gameActive) shoot(performance.now());
-    }
-  }
-  function onMouseUp(e) {
-    if (e.button === 0) mouseDown = false;
-  }
-
-  // =========================================================
-  // 键盘（桌面端）
-  // =========================================================
-  function onKeyDown(e) {
-    const k = e.key.toLowerCase();
-    if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) {
-      e.preventDefault();
-    }
-    if (k === 'w') keys.w = true;
-    if (k === 'a') keys.a = true;
-    if (k === 's') keys.s = true;
-    if (k === 'd') keys.d = true;
-    if (k === 'arrowup') keys.up = true;
-    if (k === 'arrowdown') keys.down = true;
-    if (k === 'arrowleft') keys.left = true;
-    if (k === 'arrowright') keys.right = true;
-    if (k === 'r') resetGame();
-    // 键盘模式下用最后移动方向瞄准，鼠标一旦移动会切回鼠标瞄准
-    if (k === 'w' || k === 'arrowup') aimAngle = -Math.PI/2;
-    if (k === 's' || k === 'arrowdown') aimAngle = Math.PI/2;
-    if (k === 'a' || k === 'arrowleft') aimAngle = Math.PI;
-    if (k === 'd' || k === 'arrowright') aimAngle = 0;
-  }
-  function onKeyUp(e) {
-    const k = e.key.toLowerCase();
-    if (k === 'w') keys.w = false;
-    if (k === 'a') keys.a = false;
-    if (k === 's') keys.s = false;
-    if (k === 'd') keys.d = false;
-    if (k === 'arrowup') keys.up = false;
-    if (k === 'arrowdown') keys.down = false;
-    if (k === 'arrowleft') keys.left = false;
-    if (k === 'arrowright') keys.right = false;
-  }
-  function onBlur() {
-    keys.w = keys.a = keys.s = keys.d = false;
-    keys.up = keys.down = keys.left = keys.right = false;
-    mouseDown = false;
-    fireHeld = false;
-    resetJoystick();
-  }
-
-  // =========================================================
   // 事件绑定
   // =========================================================
-  // 桌面
-  canvas.addEventListener('mousemove', onMouseMove);
-  canvas.addEventListener('mousedown', onMouseDown);
-  window.addEventListener('mouseup', onMouseUp);
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  window.addEventListener('blur', onBlur);
+  joystick.addEventListener('touchstart', joyStart, { passive: false });
+  joystick.addEventListener('touchmove', joyMove, { passive: false });
+  joystick.addEventListener('touchend', joyEnd, { passive: false });
+  joystick.addEventListener('touchcancel', joyEnd, { passive: false });
 
-  // 触屏
-  if (isTouchDevice) {
-    touchControls.classList.add('active');
-  }
-  // 摇杆事件
-  joystick.addEventListener('touchstart', joystickStart, { passive: false });
-  joystick.addEventListener('touchmove', joystickMove, { passive: false });
-  joystick.addEventListener('touchend', joystickEnd, { passive: false });
-  joystick.addEventListener('touchcancel', joystickEnd, { passive: false });
-
-  // 射击按钮事件
   fireButton.addEventListener('touchstart', fireStart, { passive: false });
   fireButton.addEventListener('touchend', fireEnd, { passive: false });
   fireButton.addEventListener('touchcancel', fireEnd, { passive: false });
 
-  // 阻止页面滚动/缩放（全局）
-  document.addEventListener('touchmove', function(e) {
-    // 除了触控控件内部，禁止其他区域滚动
-    if (!e.target.closest('#joystick') && !e.target.closest('#fireButton')) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  // 阻止双指缩放
-  document.addEventListener('gesturestart', e => e.preventDefault());
-  document.addEventListener('gesturechange', e => e.preventDefault());
-  document.addEventListener('gestureend', e => e.preventDefault());
-
-  // 横屏状态监听
-  window.addEventListener('orientationchange', () => {
-    setTimeout(() => { resizeCanvas(); }, 200);
-  });
-  window.addEventListener('resize', () => {
-    resizeCanvas();
-  });
-
-  // 重启
+  // 游戏结束时也能点击重来
   restartBtn.addEventListener('click', resetGame);
   restartBtn.addEventListener('touchstart', (e) => {
     e.preventDefault(); e.stopPropagation();
     resetGame();
   }, { passive: false });
+
+  // 阻止页面滚动
+  document.addEventListener('touchmove', (e) => {
+    if (!e.target.closest('#joystick') && !e.target.closest('#fireButton') && !e.target.closest('#restartBtn')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // 窗口尺寸变化
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    resetGame();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => { resizeCanvas(); resetGame(); }, 150);
+  });
 
   // =========================================================
   // 启动
