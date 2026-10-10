@@ -45,7 +45,7 @@
       touch-action: none;
     }
 
-    /* ---------- HUD 科幻风 ---------- */
+    /* ---------- HUD ---------- */
     #hud {
       position: absolute;
       top: 0;
@@ -68,9 +68,7 @@
       align-items: flex-start;
     }
 
-    .score-block {
-      text-align: left;
-    }
+    .score-block { text-align: left; }
 
     .score-label {
       font-size: 10px;
@@ -109,7 +107,6 @@
       letter-spacing: 2px;
     }
 
-    /* 科幻渐变血条 */
     #hpBarWrap {
       margin-top: 12px;
       width: 100%;
@@ -155,9 +152,7 @@
       display: none;
     }
 
-    #touchControls.active {
-      display: block;
-    }
+    #touchControls.active { display: block; }
 
     #joystick {
       position: absolute;
@@ -225,9 +220,7 @@
       text-align: center;
     }
 
-    #welcomeScreen.hidden {
-      display: none;
-    }
+    #welcomeScreen.hidden { display: none !important; }
 
     .welcome-title {
       font-size: 30px;
@@ -302,6 +295,8 @@
       box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 0 60px rgba(0, 255, 200, 0.35);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       touch-action: manipulation;
+      position: relative;
+      z-index: 30;
     }
 
     #startBtn:active {
@@ -309,7 +304,7 @@
       box-shadow: 0 0 16px rgba(0, 229, 255, 0.9);
     }
 
-    /* ---------- 游戏结束界面 ---------- */
+    /* ---------- 结束界面 ---------- */
     #gameOverScreen {
       position: absolute;
       top: 0;
@@ -326,9 +321,7 @@
       text-align: center;
     }
 
-    #gameOverScreen.active {
-      display: flex;
-    }
+    #gameOverScreen.active { display: flex; }
 
     .over-title {
       font-size: 34px;
@@ -417,18 +410,17 @@
       box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 0 60px rgba(0, 255, 200, 0.35);
       transition: transform 0.15s ease;
       touch-action: manipulation;
+      position: relative;
+      z-index: 30;
     }
 
-    #restartBtn:active {
-      transform: scale(0.95);
-    }
+    #restartBtn:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
 <div id="stage">
   <canvas id="gameCanvas" width="450" height="800"></canvas>
 
-  <!-- HUD -->
   <div id="hud">
     <div class="hud-top">
       <div class="score-block">
@@ -446,13 +438,11 @@
     </div>
   </div>
 
-  <!-- 触屏控件 -->
   <div id="touchControls">
     <div id="joystick"><div id="joystickKnob"></div></div>
     <div id="fireButton">FIRE</div>
   </div>
 
-  <!-- 欢迎界面 -->
   <div id="welcomeScreen">
     <div class="welcome-title">暗夜丧尸</div>
     <div class="welcome-sub">NIGHT ZOMBIE · SURVIVAL</div>
@@ -469,10 +459,9 @@
 
     <div class="best-score-welcome">🏆 历史最高分：<span id="welcomeHighScore">0</span></div>
 
-    <button id="startBtn">开始游戏</button>
+    <button id="startBtn" type="button">开始游戏</button>
   </div>
 
-  <!-- 游戏结束界面 -->
   <div id="gameOverScreen">
     <div class="over-title">GAME OVER</div>
     <div class="over-sub">你已被丧尸吞噬</div>
@@ -490,7 +479,7 @@
 
     <div class="new-record" id="newRecordText" style="display:none;">★ 新纪录 ★</div>
 
-    <button id="restartBtn">再来一局</button>
+    <button id="restartBtn" type="button">再来一局</button>
   </div>
 </div>
 
@@ -533,7 +522,7 @@
   updateHighScoreUI();
 
   // ========== 游戏状态 ==========
-  let running = false;
+  let running = false;          // ← 就是"isPlaying"
   let gameTime = 0;
   let lastTime = 0;
   let spawnTimer = 0;
@@ -554,11 +543,9 @@
   const SHOT_CD = 180;
   const SHOTGUN_DUR = 8000;
 
-  // 键盘 / 鼠标
   const keys = {};
   let mouseX = W / 2, mouseY = H / 2;
 
-  // 触屏
   let joyId = null, fireId = null;
   let joyX = 0, joyY = 0;
   let joyActive = false;
@@ -569,13 +556,16 @@
     touchControls.classList.add('active');
   }
 
-  // ========== 音效 (极简合成) ==========
+  // ========== 音效 ==========
   let audioCtx = null;
   function initAudio() {
     if (!audioCtx) {
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       } catch (e) { /* ignore */ }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
     }
   }
   function beep(freq, dur, type, vol) {
@@ -614,9 +604,9 @@
     }
   }
 
-  // ========== 游戏初始化 ==========
+  // ========== 初始化游戏 ==========
   function resetGame() {
-    running = true;
+    running = true;                       // ← 关键：写对
     gameTime = 0;
     spawnTimer = 0;
     spawnInterval = 1200;
@@ -667,14 +657,14 @@
     hpBarFill.style.width = pct + '%';
   }
 
-  // ========== 输入：键盘 ==========
+  // ========== 键盘 ==========
   window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-  // ========== 输入：鼠标 ==========
+  // ========== 鼠标 ==========
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
     mouseX = (e.clientX - r.left) / r.width * W;
@@ -690,7 +680,7 @@
     tryShoot();
   });
 
-  // ========== 输入：触摸摇杆 ==========
+  // ========== 触摸摇杆 ==========
   function updateJoystickFromTouch(t) {
     const r = joystick.getBoundingClientRect();
     const cx = r.left + r.width / 2;
@@ -741,7 +731,7 @@
   joystick.addEventListener('touchend', endJoy);
   joystick.addEventListener('touchcancel', endJoy);
 
-  // ========== 输入：触摸射击 ==========
+  // ========== 触摸射击键 ==========
   fireButton.addEventListener('touchstart', e => {
     e.preventDefault();
     initAudio();
@@ -758,6 +748,7 @@
       }
     }
   }, { passive: false });
+
   fireButton.addEventListener('touchcancel', e => {
     fireId = null;
     fireActive = false;
@@ -778,7 +769,6 @@
     if (!player || shotCd > 0) return;
     shotCd = SHOT_CD;
 
-    // 自动瞄准最近丧尸
     let target = null, minDist = Infinity;
     for (const z of zombies) {
       const d = Math.hypot(z.x - player.x, z.y - player.y);
@@ -830,16 +820,13 @@
     if (shotCd > 0) shotCd -= dt;
     if (shotgunTimer > 0) shotgunTimer -= dt;
 
-    // 生成丧尸
     spawnTimer += dt;
     if (spawnTimer >= spawnInterval) {
       spawnTimer = 0;
       spawnZombie();
     }
 
-    // 难度递增
-    const newInterval = Math.max(400, 1200 - Math.floor(gameTime / 15000) * 150);
-    spawnInterval = newInterval;
+    spawnInterval = Math.max(400, 1200 - Math.floor(gameTime / 15000) * 150);
 
     // 玩家移动
     let mx = 0, my = 0;
@@ -848,7 +835,6 @@
     if (keys['a'] || keys['arrowleft']) mx -= 1;
     if (keys['d'] || keys['arrowright']) mx += 1;
 
-    // 摇杆优先
     if (joyId !== null || Math.abs(joyX) > 0.01 || Math.abs(joyY) > 0.01) {
       mx = joyX;
       my = joyY;
@@ -861,16 +847,12 @@
       player.y += my * player.speed;
     }
 
-    // 边界限制
     player.x = Math.max(player.radius, Math.min(W - player.radius, player.x));
     player.y = Math.max(player.radius, Math.min(H - player.radius, player.y));
 
-    // 触屏自动射击
-    if (fireActive) {
-      tryShoot();
-    }
+    if (fireActive) tryShoot();
 
-    // 子弹更新
+    // 子弹
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx;
@@ -881,7 +863,7 @@
       }
     }
 
-    // 丧尸更新
+    // 丧尸
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const dx = player.x - z.x;
@@ -890,7 +872,6 @@
       z.x += dx / dist * z.speed;
       z.y += dy / dist * z.speed;
 
-      // 碰到玩家
       if (dist < z.radius + player.radius) {
         player.hp -= 0.6;
         spawnParticles(z.x, z.y, '#ff2f5e', 2);
@@ -902,7 +883,7 @@
       }
     }
 
-    // 子弹与丧尸碰撞
+    // 子弹碰撞
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       for (let j = zombies.length - 1; j >= 0; j--) {
@@ -915,6 +896,7 @@
           playZombieDeath();
           kills++;
           tryDrop(z.x, z.y);
+          if (kills % 10 === 
           if (kills % 10 === 0) {
             level++;
             speedMultiplier += 0.25;
@@ -936,10 +918,8 @@
       if (dist < player.radius + d.radius) {
         if (d.type === 'health') {
           player.hp = Math.min(player.maxHp, player.hp + 30);
-          beep(880, 0.15, 'sine', 0.1);
         } else {
           shotgunTimer = SHOTGUN_DUR;
-          beep(440, 0.2, 'sawtooth', 0.1);
         }
         playPickup();
         spawnParticles(d.x, d.y, d.type === 'health' ? '#ff5e9e' : '#ffaa00', 8);
@@ -947,12 +927,10 @@
         updateHUD();
         continue;
       }
-      if (d.life <= 0
-        drops.splice(i, 1);
-      }
+      if (d.life <= 0) drops.splice(i, 1);
     }
 
-    // 粒子更新
+    // 粒子
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x += p.vx;
@@ -966,7 +944,6 @@
 
   // ========== 绘制 ==========
   function drawGrid() {
-    // 暗黑地板纹理
     ctx.fillStyle = '#0a0e18';
     ctx.fillRect(0, 0, W, H);
 
@@ -984,7 +961,6 @@
     }
     ctx.stroke();
 
-    // 增强中心光晕
     const grad = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, Math.max(W, H) * 0.75);
     grad.addColorStop(0, 'rgba(0, 80, 120, 0.10)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
@@ -994,7 +970,6 @@
 
   function drawPlayer() {
     if (!player) return;
-    // 光环
     const g = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, player.radius * 2.2);
     g.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
     g.addColorStop(1, 'rgba(0, 229, 255, 0)');
@@ -1014,7 +989,6 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const z of zombies) {
-      // 危险红光
       const g = ctx.createRadialGradient(z.x, z.y, 1, z.x, z.y, z.radius * 1.8);
       g.addColorStop(0, 'rgba(255, 47, 94, 0.28)');
       g.addColorStop(1, 'rgba(255, 47, 94, 0)');
@@ -1046,7 +1020,6 @@
     ctx.textBaseline = 'middle';
     for (const d of drops) {
       const bobY = Math.sin(d.bob) * 3;
-      // 发光圈
       const col = d.type === 'health' ? 'rgba(255, 94, 158, 0.5)' : 'rgba(255, 170, 0, 0.5)';
       ctx.save();
       ctx.shadowColor = col;
@@ -1069,7 +1042,6 @@
 
   function drawCrosshair() {
     if (!player) return;
-    // 瞄准线（仅在桌面端显示）
     if (!isTouch) {
       ctx.save();
       ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
@@ -1081,7 +1053,6 @@
       ctx.stroke();
       ctx.restore();
     }
-    // 准星
     ctx.save();
     ctx.strokeStyle = 'rgba(255, 110, 199, 0.7)';
     ctx.lineWidth = 1.5;
@@ -1093,7 +1064,6 @@
 
   function drawShotgunIndicator() {
     if (shotgunTimer > 0) {
-      const pct = shotgunTimer / SHOTGUN_DUR;
       ctx.save();
       ctx.fillStyle = 'rgba(255, 170, 0, 0.85)';
       ctx.font = 'bold 12px monospace';
@@ -1124,7 +1094,7 @@
     const isNewRecord = score > highScore;
     if (isNewRecord) {
       highScore = score;
-      localStorage.setItem(HS_KEY, String(highScore));
+      try { localStorage.setItem(HS_KEY, String(highScore)); } catch (e) {}
     }
     updateHighScoreUI();
 
@@ -1141,7 +1111,7 @@
     if (!lastTime) lastTime = now;
     let dt = now - lastTime;
     lastTime = now;
-    if (dt > 100) dt = 100; // 防止后台卡顿
+    if (dt > 100) dt = 100;
 
     if (running) {
       update(dt);
@@ -1149,33 +1119,69 @@
     render();
   }
 
-  // ========== 按钮事件 ==========
-  function startGame() {
-    initAudio();
+  // ========== 启动 / 重启（修复重点） ==========
+  let startLock = false;
+
+  function hideWelcome() {
+    // 双保险：既加 class，也直接设内联 style
     welcomeScreen.classList.add('hidden');
-    gameOverScreen.classList.remove('active');
-    resetGame();
+    welcomeScreen.style.display = 'none';
   }
 
-  startBtn.addEventListener('click', startGame);
-  startBtn.addEventListener('touchend', e => {
+  function showWelcome() {
+    welcomeScreen.classList.remove('hidden');
+    welcomeScreen.style.display = '';   // 恢复 CSS 默认 flex
+  }
+
+  function startGame() {
+    if (startLock) return;   // 防重复触发
+    startLock = true;
+
+    initAudio();
+    hideWelcome();
+    gameOverScreen.classList.remove('active');
+
+    resetGame();             // ← 内部将 running = true
+
+    // 下一帧解锁，防止 click / touchend 重复触发
+    setTimeout(() => { startLock = false; }, 300);
+  }
+
+  function restartGame() {
+    if (startLock) return;
+    startLock = true;
+
+    gameOverScreen.classList.remove('active');
+    resetGame();
+
+    setTimeout(() => { startLock = false; }, 300);
+  }
+
+  // 统一事件绑定：click + touchend（touchend 手动触发一次，防止某些浏览器 click 丢失）
+  startBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    startGame();
+  });
+
+  startBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
     startGame();
   }, { passive: false });
 
-  restartBtn.addEventListener('click', () => {
-    gameOverScreen.classList.remove('active');
-    resetGame();
-  });
-  restartBtn.addEventListener('touchend', e => {
+  restartBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    gameOverScreen.classList.remove('active');
-    resetGame();
+    restartGame();
+  });
+
+  restartBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    restartGame();
   }, { passive: false });
 
-  // 初始渲染一帧背景
-  resetGame();
-  running = false;
+  // 初始：显示欢迎界面，渲染一张静态背景
+  resetGame();          // 先把游戏数据初始化好（此时 running=true，需要立刻置回 false）
+  running = false;      // 停在欢迎界面不跑逻辑
+  updateHUD();
   render();
 
   requestAnimationFrame(loop);
