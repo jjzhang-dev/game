@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>暗夜尸潮 · 2D俯视角丧尸生存 · 升级版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      background: #0a0c0e;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .game-wrapper {
+      background: #0f1215;
+      padding: 20px;
+      border-radius: 24px;
+      box-shadow: 0 0 40px rgba(120, 0, 0, 0.7), 0 0 0 2px #2a1f1f inset;
+      border: 1px solid #4d2b2b;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border-radius: 16px;
+      box-shadow: 0 0 0 3px #1e1a1a, 0 0 30px #8b0000;
+      cursor: crosshair;
+      background: #14181c;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      color: #c0b9b0;
+      font-size: 1.2rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px #8b0000;
+      padding: 0 6px;
+    }
+    .hp-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hp-fill {
+      width: 180px;
+      height: 16px;
+      background: #2b1e1e;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: inset 0 0 8px #000000;
+      border: 1px solid #5e3737;
+    }
+    .hp-fill span {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #b30000, #e63946);
+      border-radius: 20px;
+      transition: width 0.15s ease;
+      box-shadow: 0 0 16px #ff4d4d;
+    }
+    .stats {
+      display: flex;
+      gap: 25px;
+      align-items: center;
+    }
+    .score, .level {
+      color: #d4af37;
+      text-shadow: 0 0 12px #a67c00;
+    }
+    .level {
+      color: #c084fc;
+      text-shadow: 0 0 12px #7e22ce;
+    }
+    .restart-btn {
+      background: #1e1212;
+      border: 1px solid #6b3a3a;
+      color: #ddbbbb;
+      font-weight: bold;
+      padding: 6px 18px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.1s;
+      box-shadow: 0 0 12px #3f1f1f;
+    }
+    .restart-btn:hover {
+      background: #3a1f1f;
+      color: #fff;
+      box-shadow: 0 0 20px #9b2c2c;
+    }
+    .controls-tip {
+      text-align: center;
+      margin-top: 8px;
+      color: #6b5e5e;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+<div>
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+    <div class="hud">
+      <div class="hp-bar">
+        <span>❤️</span>
+        <div class="hp-fill"><span id="hpBarFill" style="width: 100%"></span></div>
+      </div>
+      <div class="stats">
+        <div class="score">🔫 击杀: <span id="killCount">0</span></div>
+        <div class="level">⭐ 关卡: <span id="levelDisplay">1</span></div>
+      </div>
+      <button class="restart-btn" id="restartBtn">⟲ 重新开始</button>
+    </div>
+    <div class="controls-tip">WASD / 箭头移动 · 鼠标瞄准射击 · 拾取掉落物 · 生存下去</div>
+  </div>
+</div>
+<script>
+  (function() {
+    // ---------- 画布与上下文 ----------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const hpBarFill = document.getElementById('hpBarFill');
+    const killCountSpan = document.getElementById('killCount');
+    const levelDisplay = document.getElementById('levelDisplay');
+
+    // ---------- 固定尺寸 ----------
+    const W = 900, H = 600;
+
+    // ---------- 音效用 AudioContext ----------
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 开枪音效: 短促的噪声+高频脉冲
+    function playShootSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      // 噪声 buffer
+      const bufferSize = audioCtx.sampleRate * 0.08; // 80ms
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2.5);
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 800;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.25, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start(now);
+      noise.stop(now + 0.1);
+
+      // 高频脉冲 (枪声“啪”)
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(90, now + 0.05);
+
+      oscGain.gain.setValueAtTime(0.12, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+      osc.connect(oscGain);
+      oscGain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+
+    // 丧尸死亡音效: 低沉的下滑音 + 轻微噪声
+    function playZombieDeathSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      // 低沉下滑振荡器
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.25);
+
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+
+      // 添加一点噪声增加“糊”感
+      const bufferSize = audioCtx.sampleRate * 0.15;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.8) * 0.4;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 500;
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.1, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start(now);
+      noise.stop(now + 0.22);
+    }
+
+    // 拾取音效
+    function playPickupSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(660, now);
+      osc.frequency.setValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+
+    // 升级音效
+    function playLevelUpSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, now + i * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.07);
+        osc.stop(now + i * 0.07 + 0.25);
+      });
+    }
+
+    // ---------- 游戏状态 ----------
+    let gameActive = true;
+    let player = {
+      x: W / 2,
+      y: H / 2,
+      radius: 18,
+      speed: 3.4,
+      hp: 100,
+      maxHp: 100
+    };
+
+    // 方向输入
+    const keys = {
+      w: false, a: false, s: false, d: false,
+      up: false, down: false, left: false, right: false
+    };
+
+    // 鼠标世界坐标 (瞄准用)
+    let mouse = { x: player.x + 30, y: player.y };
+
+    // 丧尸数组
+    let zombies = [];
+    // 子弹数组
+    let bullets = [];
+    // 掉落物数组
+    let pickups = [];
+
+    // 得分/击杀/关卡
+    let killCount = 0;
+    let currentLevel = 1;
+    let speedMultiplier = 1.0; // 丧尸速度倍率
+
+    // 时间/生成控制
+    let lastZombieSpawn = 0;
+    let zombieSpawnInterval = 1200;
+    let gameTime = 0;
+    let lastTimestamp = 0;
+
+    // 射击冷却
+    let lastShotTime = 0;
+    const SHOT_COOLDOWN = 170;
+
+    // 鼠标按下状态
+    let mouseDown = false;
+
+    // 武器状态: 散弹枪是否有加成 (pickup 类型)
+    let hasShotgun = false;
+    let shotgunTimer = 0; // 剩余时间(毫秒)
+    const SHOTGUN_DURATION = 8000; // 8秒
+
+    // ---------- 辅助函数 ----------
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function distance(x1, y1, x2, y2) {
+      return Math.hypot(x2 - x1, y2 - y1);
+    }
+
+    // ---------- 重置游戏 ----------
+    function resetGame() {
+      gameActive = true;
+      player = {
+        x: W / 2,
+        y: H / 2,
+        radius: 18,
+        speed: 3.4,
+        hp: 100,
+        maxHp: 100
+      };
+      zombies = [];
+      bullets = [];
+      pickups = [];
+      killCount = 0;
+      currentLevel = 1;
+      speedMultiplier = 1.0;
+      killCountSpan.textContent = '0';
+      levelDisplay.textContent = '1';
+      hpBarFill.style.width = '100%';
+      gameTime = 0;
+      lastZombieSpawn = 0;
+      zombieSpawnInterval = 1200;
+      hasShotgun = false;
+      shotgunTimer = 0;
+      mouse = { x: player.x + 30, y: player.y };
+
+      for (let i = 0; i < 3; i++) {
+        spawnZombie(true);
+      }
+      updateHpBar();
+    }
+
+    // ---------- 生还者血量UI更新 ----------
+    function updateHpBar() {
+      const percent = Math.max(0, (player.hp / player.maxHp) * 100);
+      hpBarFill.style.width = percent + '%';
+    }
+
+    // ---------- 生成丧尸 ----------
+    function spawnZombie(forceFar = false) {
+      const edge = Math.floor(Math.random() * 4);
+      let x, y;
+      const padding = 50;
+      switch (edge) {
+        case 0: x = Math.random() * W; y = -padding; break;
+        case 1: x = W + padding; y = Math.random() * H; break;
+        case 2: x = Math.random() * W; y = H + padding; break;
+        default: x = -padding; y = Math.random() * H; break;
+      }
+
+      let tries = 0;
+      while (distance(x, y, player.x, player.y) < 220 && tries < 15) {
+        x = Math.random() * W;
+        y = Math.random() * H;
+        tries++;
+      }
+
+      const baseSpeed = 0.75 + Math.random() * 0.6;
+      zombies.push({
+        x, y,
+        radius: 16,
+        speed: baseSpeed * speedMultiplier,
+        hp: 1,
+        maxHp: 1,
+        flash: 0,
+        wobble: Math.random() * Math.PI * 2,
+        // 用于绘制emoji偏移
+        phase: Math.random() * 10
+      });
+    }
+
+    // ---------- 射击 ----------
+    function shoot(now) {
+      if (!gameActive) return;
+      if (now - lastShotTime < SHOT_COOLDOWN) return;
+      lastShotTime = now;
+
+      playShootSound();
+
+      if (hasShotgun) {
+        // 散弹枪: 扇形射出5发
+        const baseAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        const spread = 0.35; // 弧度
+        const count = 5;
+        for (let i = 0; i < count; i++) {
+          const offset = (i - (count - 1) / 2) * (spread / (count - 1)) * 2;
+          const angle = baseAngle + offset;
+          createBullet(angle);
+        }
+      } else {
+        const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        createBullet(angle);
+      }
+    }
+
+    function createBullet(angle) {
+      const speed = 9;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const offset = 20;
+      bullets.push({
+        x: player.x + Math.cos(angle) * offset,
+        y: player.y + Math.sin(angle) * offset,
+        vx, vy,
+        radius: 6,
+        life: 100,
+        damage: 1,
+        angle: angle
+      });
+    }
+
+    // ---------- 更新玩家位置 ----------
+    function updatePlayer() {
+      let dx = 0, dy = 0;
+      if (keys.w || keys.up) dy -= 1;
+      if (keys.s || keys.down) dy += 1;
+      if (keys.a || keys.left) dx -= 1;
+      if (keys.d || keys.right) dx += 1;
+
+      if (dx !== 0 || dy !== 0) {
+        const len = Math.hypot(dx, dy);
+        dx /= len;
+        dy /= len;
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+      }
+
+      const pad = 22;
+      player.x = clamp(player.x, pad, W - pad);
+      player.y = clamp(player.y, pad, H - pad);
+    }
+
+    // ---------- 更新丧尸 ----------
+    function updateZombies(deltaTime) {
+      const dt = deltaTime / 16.67;
+      for (let i = zombies.length - 1; i >= 0; i--) {
+        const z = zombies[i];
+        const angle = Math.atan2(player.y - z.y, player.x - z.x);
+        z.wobble += 0.07;
+        const wobbleEffect = Math.sin(z.wobble) * 0.28;
+
+        const moveAngle = angle + wobbleEffect * 0.22;
+        const spd = z.speed * dt * 1.55;
+        z.x += Math.cos(moveAngle) * spd;
+        z.y += Math.sin(moveAngle) * spd;
+
+        z.x = clamp(z.x, -40, W + 40);
+        z.y = clamp(z.y, -40, H + 40);
+
+        if (z.flash > 0) {
+          z.flash -= 0.05 * dt;
+          if (z.flash < 0) z.flash = 0;
+        }
+
+        // 碰撞玩家
+        const distToPlayer = distance(z.x, z.y, player.x, player.y);
+        if (distToPlayer < z.radius + player.radius) {
+          player.hp = Math.max(0, player.hp - 1.0 * dt);
+          updateHpBar();
+
+          const knockAngle = Math.atan2(z.y - player.y, z.x - player.x);
+          z.x += Math.cos(knockAngle) * 2.8;
+          z.y += Math.sin(knockAngle) * 2.8;
+
+          if (player.hp <= 0) {
+            player.hp = 0;
+            updateHpBar();
+            gameActive = false;
+            return;
+          }
+        }
+      }
+    }
+
+    // ---------- 更新子弹与碰撞 ----------
+    function updateBullets() {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life--;
+
+        if (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30 || b.life <= 0) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        let hit = false;
+        for (let j = zombies.length - 1; j >= 0; j--) {
+          const z = zombies[j];
+          if (distance(b.x, b.y, z.x, z.y) < z.radius + b.radius) {
+            z.hp -= b.damage;
+            z.flash = 1.0;
+            hit = true;
+            if (z.hp <= 0) {
+              // 丧尸死亡
+              zombies.splice(j, 1);
+              killCount++;
+              killCountSpan.textContent = killCount;
+
+              // 播放死亡音效
+              playZombieDeathSound();
+
+              // 掉落判定 (20%概率)
+              if (Math.random() < 0.20) {
+                const dropType = Math.random() < 0.5 ? 'health' : 'shotgun';
+                pickups.push({
+                  x: z.x,
+                  y: z.y,
+                  radius: 14,
+                  type: dropType,
+                  life: 12000, // 12秒后消失
+                  bob: Math.random() * Math.PI * 2
+                });
+              }
+
+              // 每击杀10个丧尸升一级
+              if (killCount > 0 && killCount % 10 === 0) {
+                currentLevel++;
+                speedMultiplier += 0.25; // 速度提升25%
+                levelDisplay.textContent = currentLevel;
+
+                // 提高丧尸基础速度（通过重新计算已存在丧尸）
+                zombies.forEach(z => {
+                  z.speed = (z.baseSpeed || 0.75 + Math.random() * 0.6) * speedMultiplier;
+                  // 如果是旧的丧尸没有baseSpeed，补一个
+                  if (!z.baseSpeed) z.baseSpeed = z.speed / (speedMultiplier - 0.25);
+                });
+
+                // 减少生成间隔（更快刷怪）
+                zombieSpawnInterval = Math.max(400, zombieSpawnInterval - 120);
+
+                // 播放升级音效
+                playLevelUpSound();
+              }
+            }
+            break;
+          }
+        }
+        if (hit) {
+          bullets.splice(i, 1);
+        }
+      }
+    }
+
+    // ---------- 更新掉落物 ----------
+    function updatePickups(deltaTime) {
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const p = pickups[i];
+        p.life -= deltaTime;
+        p.bob += 0.05;
+
+        // 玩家拾取判定
+        const distToPlayer = distance(p.x, p.y, player.x, player.y);
+        if (distToPlayer < p.radius + player.radius + 8) {
+          // 拾取
+          if (p.type === 'health') {
+            player.hp = Math.min(player.maxHp, player.hp + 30);
+            updateHpBar();
+          } else if (p.type === 'shotgun') {
+            hasShotgun = true;
+            shotgunTimer = SHOTGUN_DURATION;
+          }
+          playPickupSound();
+          pickups.splice(i, 1);
+          continue;
+        }
+
+        if (p.life <= 0) {
+          pickups.splice(i, 1);
+        }
+      }
+
+      // 散弹枪buff倒计时
+      if (hasShotgun) {
+        shotgunTimer -= deltaTime;
+        if (shotgunTimer <= 0) {
+          hasShotgun = false;
+          shotgunTimer = 0;
+        }
+      }
+    }
+
+    // ---------- 生成丧尸(时间) ----------
+    function spawnZombiesByTime(now) {
+      if (!gameActive) return;
+      if (now - lastZombieSpawn > zombieSpawnInterval) {
+        lastZombieSpawn = now;
+        spawnZombie();
+        gameTime += zombieSpawnInterval;
+
+        // 高关卡同时生成更多
+        if (Math.random() < 0.3 && zombies.length < 35) {
+          spawnZombie();
+        }
+        if (currentLevel > 3 && Math.random() < 0.2 && zombies.length < 40) {
+          spawnZombie();
+        }
+      }
+    }
+
+    // ---------- 绘制 ----------
+    function draw() {
+      // 背景清空
+      ctx.clearRect(0, 0, W, H);
+
+      // ---- 地板纹理: 深色地砖 + 网格 + 血迹 ----
+      // 底色
+      ctx.fillStyle = '#12181c';
+      ctx.fillRect(0, 0, W, H);
+
+      // 地砖效果 (50x50)
+      const tileSize = 50;
+      for (let ty = 0; ty < H; ty += tileSize) {
+        for (let tx = 0; tx < W; tx += tileSize) {
+          const isAlt = ((tx / tileSize) + (ty / tileSize)) % 2 === 0;
+          ctx.fillStyle = isAlt ? '#161e24' : '#121920';
+          ctx.fillRect(tx, ty, tileSize, tileSize);
+        }
+      }
+
+      // 网格线
+      ctx.strokeStyle = '#1f2a30';
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i <= W; i += tileSize) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, H);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= H; i += tileSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(W, i);
+        ctx.stroke();
+      }
+
+      // 血迹/污渍 (固定随机分布)
+      for (let i = 0; i < 20; i++) {
+        const sx = (i * 173 + 37) % W;
+        const sy = (i * 291 + 83) % H;
+        const r = 8 + (i % 5) * 6;
+        ctx.beginPath();
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = i % 3 === 0 ? '#1e1515' : '#231919';
+        ctx.fill();
+
+        // 飞溅小点
+        for (let k = 0; k < 3; k++) {
+          ctx.beginPath();
+          ctx.arc(sx + (k * 13 - 10) % 25, sy + (k * 7 - 5) % 20, 2 + k, 0, Math.PI * 2);
+          ctx.fillStyle = '#1c1212';
+          ctx.fill();
+        }
+      }
+
+      // 增加暗角效果
+      const gradient = ctx.createRadialGradient(W/2, H/2, 200, W/2, H/2, 600);
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      // ---- 绘制掉落物 ----
+      pickups.forEach(p => {
+        const bobY = Math.sin(p.bob) * 4;
+        ctx.font = '28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // 发光
+        ctx.shadowColor = p.type === 'health' ? '#44ff88' : '#ffaa44';
+        ctx.shadowBlur = 20;
+        ctx.fillText(p.type === 'health' ? '💊' : '🔥', p.x, p.y + bobY);
+        ctx.shadowBlur = 0;
+      });
+
+      // ---- 绘制丧尸 (Emoji) ----
+      ctx.font = '34px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      zombies.forEach(z => {
+        // 受击闪白: 用filter亮度
+        if (z.flash > 0.1) {
+          ctx.filter = `brightness(${1 + z.flash * 1.5})`;
+        } else {
+          ctx.filter = 'none';
+        }
+        const bobY = Math.sin(z.phase + Date.now() * 0.008) * 3;
+        ctx.fillText('🧟‍♂️', z.x, z.y + bobY);
+        ctx.filter = 'none';
+      });
+
+      // ---- 绘制子弹 (小圆点 + 光晕) ----
+      bullets.forEach(b => {
+        ctx.shadowColor = '#ffcc44';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffe070';
+        ctx.fill();
+        // 核心亮点
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      });
+      ctx.shadowBlur = 0;
+
+      // ---- 绘制玩家 (🤠) ----
+      // 玩家光环 (表示存活)
+      ctx.shadowColor = '#44cc88';
+      ctx.shadowBlur = 25;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(80, 220, 140, 0.5)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.font = '40px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // 轻微上下浮动
+      const playerBob = Math.sin(Date.now() * 0.006) * 2;
+      ctx.fillText('🤠', player.x, player.y + playerBob);
+
+      // 绘制枪口指向 (一个小光标指示)
+      const angleToMouse = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+      const gunTipX = player.x + Math.cos(angleToMouse) * 30;
+      const gunTipY = player.y + Math.sin(angleToMouse) * 30;
+      ctx.beginPath();
+      ctx.arc(gunTipX, gunTipY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffdd88';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ffaa33';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // ---- 散弹枪buff倒计时条 ----
+      if (hasShotgun) {
+        const barW = 80;
+        const barH = 8;
+        const barX = player.x - barW / 2;
+        const barY = player.y - 42;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(barX, barY, barW, barH);
+        const ratio = shotgunTimer / SHOTGUN_DURATION;
+        ctx.fillStyle = '#ffaa33';
+        ctx.fillRect(barX, barY, barW * ratio, barH);
+        ctx.strokeStyle = '#ffaa33';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barW, barH);
+      }
+
+      // ---- 游戏结束遮罩 ----
+      if (!gameActive) {
+        ctx.fillStyle = 'rgba(10, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.font = 'bold 52px "Courier New", monospace';
+        ctx.fillStyle = '#b30000';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#ff0000';
+        ctx.textAlign = 'center';
+        ctx.fillText('💀 你被吞噬了', W / 2, H / 2 - 40);
+        ctx.font = '30px "Courier New"';
+        ctx.fillStyle = '#d4af37';
+        ctx.fillText(`击杀数: ${killCount}`, W / 2, H / 2 + 40);
+        ctx.fillText(`关卡: ${currentLevel}`, W / 2, H / 2 + 90);
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // ---------- 最终游戏循环 ----------
+    function finalGameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const deltaTime = Math.min(32, timestamp - lastTimestamp);
+      lastTimestamp = timestamp;
+
+      if (gameActive) {
+        updatePlayer();
+        updateZombies(deltaTime);
+        updateBullets();
+        updatePickups(deltaTime);
+        spawnZombiesByTime(timestamp);
+
+        if (player.hp <= 0) {
+          gameActive = false;
+          player.hp = 0;
+          updateHpBar();
+        }
+
+        if (mouseDown) {
+          shoot(timestamp);
+        }
+      }
+
+      draw();
+      requestAnimationFrame(finalGameLoop);
+    }
+
+    // ---------- 鼠标事件 ----------
+    function onMouseMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      mouse.x = clamp(canvasX, 0, W);
+      mouse.y = clamp(canvasY, 0, H);
+    }
+
+    function onMouseDown(e) {
+      e.preventDefault();
+      if (e.button === 0) {
+        mouseDown = true;
+        // 立即射出一发（如果冷却允许）
+        if (gameActive) shoot(performance.now());
+      }
+    }
+
+    function onMouseUp(e) {
+      if (e.button === 0) {
+        mouseDown = false;
+      }
+    }
+
+    // ---------- 键盘事件 ----------
+    function onKeyDown(e) {
+      const key = e.key.toLowerCase();
+      if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(key)) {
+        e.preventDefault();
+      }
+
+      if (key === 'w') keys.w = true;
+      if (key === 'a') keys.a = true;
+      if (key === 's') keys.s = true;
+      if (key === 'd') keys.d = true;
+      if (key === 'arrowup') keys.up = true;
+      if (key === 'arrowdown') keys.down = true;
+      if (key === 'arrowleft') keys.left = true;
+      if (key === 'arrowright') keys.right = true;
+
+      if (key === 'r') {
+        resetGame();
+      }
+    }
+
+    function onKeyUp(e) {
+      const key = e.key.toLowerCase();
+      if (key === 'w') keys.w = false;
+      if (key === 'a') keys.a = false;
+      if (key === 's') keys.s = false;
+      if (key === 'd') keys.d = false;
+      if (key === 'arrowup') keys.up = false;
+      if (key === 'arrowdown') keys.down = false;
+      if (key === 'arrowleft') keys.left = false;
+      if (key === 'arrowright') keys.right = false;
+    }
+
+    function onBlur() {
+      keys.w
+      keys.w = keys.a = keys.s = keys.d = false;
+      keys.up = keys.down = keys.left = keys.right = false;
+      mouseDown = false;
+    }
+
+    // 首次点击画布时初始化音频上下文（浏览器自动播放策略）
+    function onCanvasClick() {
+      initAudio();
+    }
+
+    // ---------- 重启按钮 ----------
+    document.getElementById('restartBtn').addEventListener('click', resetGame);
+
+    // ---------- 事件绑定 ----------
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('click', onCanvasClick);
+    window.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+
+    // ---------- 初始化 ----------
+    resetGame();
+    requestAnimationFrame(finalGameLoop);
+
+  })();
+</script>
+</body>
+</html>
