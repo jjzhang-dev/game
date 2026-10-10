@@ -107,6 +107,36 @@
       letter-spacing: 2px;
     }
 
+    /* 武器 / 加速 状态条 */
+    #buffBar {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+      margin-top: 2px;
+    }
+
+    .buff-chip {
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 3px 9px;
+      border-radius: 10px;
+      display: none;
+      white-space: nowrap;
+    }
+
+    #buffWeapon {
+      color: #2b1400;
+      background: linear-gradient(90deg, #ffd700, #ffaa00);
+      box-shadow: 0 0 12px #ffaa00;
+    }
+
+    #buffSpeed {
+      color: #001a2b;
+      background: linear-gradient(90deg, #7df9ff, #00b3cc);
+      box-shadow: 0 0 12px #00e5ff;
+    }
+
     #hpBarWrap {
       margin-top: 12px;
       width: 100%;
@@ -201,107 +231,6 @@
       pointer-events: auto;
       touch-action: none;
       text-shadow: 0 0 8px #ff2fa0;
-    }
-
-    /* ---------- 欢迎界面 ---------- */
-    #welcomeScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 30px 24px;
-      background: radial-gradient(circle at 50% 30%, #0d1830 0%, #030509 80%);
-      z-index: 20;
-      text-align: center;
-    }
-
-    #welcomeScreen.hidden { display: none !important; }
-
-    .welcome-title {
-      font-size: 30px;
-      font-weight: 900;
-      letter-spacing: 6px;
-      color: #00ffe0;
-      text-shadow: 0 0 10px #00ffe0, 0 0 30px #00b3cc, 0 0 60px #007a8a;
-      margin-bottom: 6px;
-    }
-
-    .welcome-sub {
-      font-size: 12px;
-      color: #7df9ff;
-      letter-spacing: 4px;
-      opacity: 0.85;
-      margin-bottom: 30px;
-      text-shadow: 0 0 8px #00e5ff;
-    }
-
-    .instructions {
-      width: 100%;
-      max-width: 320px;
-      background: rgba(0, 30, 50, 0.5);
-      border: 1px solid rgba(0, 229, 255, 0.35);
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 26px;
-      box-shadow: 0 0 24px rgba(0, 229, 255, 0.15), inset 0 0 18px rgba(0, 100, 140, 0.2);
-      text-align: left;
-    }
-
-    .instructions h3 {
-      font-size: 13px;
-      color: #ff6ec7;
-      letter-spacing: 3px;
-      margin-bottom: 12px;
-      text-shadow: 0 0 10px #ff6ec7;
-      text-align: center;
-    }
-
-    .instructions p {
-      font-size: 12.5px;
-      color: #b8f4ff;
-      line-height: 2;
-      letter-spacing: 1px;
-    }
-
-    .instructions .key {
-      color: #ffcf5c;
-      font-weight: bold;
-      text-shadow: 0 0 6px #ffaa00;
-    }
-
-    .best-score-welcome {
-      font-size: 14px;
-      color: #ffcf5c;
-      text-shadow: 0 0 8px #ffaa00, 0 0 18px #cc8800;
-      margin-bottom: 22px;
-      letter-spacing: 2px;
-    }
-
-    #startBtn {
-      padding: 15px 52px;
-      font-size: 17px;
-      font-weight: bold;
-      letter-spacing: 6px;
-      color: #030509;
-      background: linear-gradient(90deg, #00ffb3, #00e5ff, #b44bff);
-      border: none;
-      border-radius: 40px;
-      cursor: pointer;
-      box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 0 60px rgba(0, 255, 200, 0.35);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      touch-action: manipulation;
-      position: relative;
-      z-index: 30;
-    }
-
-    #startBtn:active {
-      transform: scale(0.95);
-      box-shadow: 0 0 16px rgba(0, 229, 255, 0.9);
     }
 
     /* ---------- 结束界面 ---------- */
@@ -430,6 +359,10 @@
       </div>
       <div class="right-block">
         <div id="levelDisplay">LV.1</div>
+        <div id="buffBar">
+          <div class="buff-chip" id="buffWeapon">🌟 三发散射</div>
+          <div class="buff-chip" id="buffSpeed">⚡ 加速</div>
+        </div>
       </div>
     </div>
     <div id="hpBarWrap">
@@ -441,25 +374,6 @@
   <div id="touchControls">
     <div id="joystick"><div id="joystickKnob"></div></div>
     <div id="fireButton">FIRE</div>
-  </div>
-
-  <div id="welcomeScreen">
-    <div class="welcome-title">暗夜丧尸</div>
-    <div class="welcome-sub">NIGHT ZOMBIE · SURVIVAL</div>
-
-    <div class="instructions">
-      <h3>⏣ 操作说明 ⏣</h3>
-      <p>
-        <span class="key">移动</span>：WASD / 方向键<br>
-        <span class="key">瞄准</span>：鼠标移动<br>
-        <span class="key">射击</span>：鼠标点击 / 自动瞄准<br>
-        <span class="key">手机</span>：左摇杆移动 · 右按钮射击
-      </p>
-    </div>
-
-    <div class="best-score-welcome">🏆 历史最高分：<span id="welcomeHighScore">0</span></div>
-
-    <button id="startBtn" type="button">开始游戏</button>
   </div>
 
   <div id="gameOverScreen">
@@ -487,42 +401,42 @@
 (function() {
   'use strict';
 
-  // ========== 基础配置 ==========
+  /* =========================================================
+     基础配置
+  ========================================================= */
   const W = 450, H = 800;
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
   // DOM
-  const hpBarFill = document.getElementById('hpBarFill');
-  const killCountEl = document.getElementById('killCount');
-  const levelDisplay = document.getElementById('levelDisplay');
-  const hudHighScore = document.getElementById('hudHighScore');
-  const welcomeScreen = document.getElementById('welcomeScreen');
-  const welcomeHighScore = document.getElementById('welcomeHighScore');
-  const startBtn = document.getElementById('startBtn');
-  const gameOverScreen = document.getElementById('gameOverScreen');
-  const finalHighScore = document.getElementById('finalHighScore');
-  const finalScore = document.getElementById('finalScore');
-  const newRecordText = document.getElementById('newRecordText');
-  const restartBtn = document.getElementById('restartBtn');
-  const touchControls = document.getElementById('touchControls');
-  const joystick = document.getElementById('joystick');
-  const joystickKnob = document.getElementById('joystickKnob');
-  const fireButton = document.getElementById('fireButton');
+  const hpBarFill        = document.getElementById('hpBarFill');
+  const killCountEl      = document.getElementById('killCount');
+  const levelDisplay     = document.getElementById('levelDisplay');
+  const hudHighScore     = document.getElementById('hudHighScore');
+  const gameOverScreen   = document.getElementById('gameOverScreen');
+  const finalHighScore   = document.getElementById('finalHighScore');
+  const finalScore       = document.getElementById('finalScore');
+  const newRecordText    = document.getElementById('newRecordText');
+  const restartBtn       = document.getElementById('restartBtn');
+  const touchControls    = document.getElementById('touchControls');
+  const joystick         = document.getElementById('joystick');
+  const joystickKnob     = document.getElementById('joystickKnob');
+  const fireButton       = document.getElementById('fireButton');
+  const buffWeaponEl     = document.getElementById('buffWeapon');
+  const buffSpeedEl      = document.getElementById('buffSpeed');
 
-  // ========== 本地存储最高分 ==========
+  /* =========================================================
+     本地存储最高分
+  ========================================================= */
   const HS_KEY = 'zombie_survival_highscore';
   let highScore = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
   if (isNaN(highScore)) highScore = 0;
+  hudHighScore.textContent = highScore;
 
-  function updateHighScoreUI() {
-    hudHighScore.textContent = highScore;
-    welcomeHighScore.textContent = highScore;
-  }
-  updateHighScoreUI();
-
-  // ========== 游戏状态 ==========
-  let running = false;          // ← 就是"isPlaying"
+  /* =========================================================
+     游戏状态变量
+  ========================================================= */
+  let running = false;      // 是否正在游戏
   let gameTime = 0;
   let lastTime = 0;
   let spawnTimer = 0;
@@ -530,33 +444,43 @@
   let kills = 0;
   let level = 1;
   let speedMultiplier = 1;
+
   let player = null;
   let zombies = [];
   let bullets = [];
   let drops = [];
   let particles = [];
+  let floatTexts = [];      // 飘字（+1 生命 / 武器升级！）
 
   let aimAngle = 0;
   let shotCd = 0;
-  let shotgunTimer = 0;
 
-  const SHOT_CD = 180;
-  const SHOTGUN_DUR = 8000;
+  // 道具增益计时器
+  let weaponBuffTimer = 0;  // 三发散射剩余 ms
+  let speedBuffTimer = 0;   // 加速剩余 ms
+
+  const SHOT_CD = 180;          // 普通射击冷却
+  const SHOT_CD_BUFF = 110;     // 武器升级时冷却更快
+  const WEAPON_BUFF_DUR = 10000; // 武器升级持续 10s
+  const SPEED_BUFF_DUR = 5000;   // 加速持续 5s
+
+  const BASE_SPEED = 4.5;
+  const SPEED_BUFF_MUL = 1.7;    // 加速倍率
 
   const keys = {};
   let mouseX = W / 2, mouseY = H / 2;
 
+  // 触屏
   let joyId = null, fireId = null;
   let joyX = 0, joyY = 0;
-  let joyActive = false;
   let fireActive = false;
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  if (isTouch) {
-    touchControls.classList.add('active');
-  }
+  if (isTouch) touchControls.classList.add('active');
 
-  // ========== 音效 ==========
+  /* =========================================================
+     音效（Web Audio 合成）
+  ========================================================= */
   let audioCtx = null;
   function initAudio() {
     if (!audioCtx) {
@@ -583,12 +507,15 @@
       osc.stop(audioCtx.currentTime + dur);
     } catch (e) { /* ignore */ }
   }
-  function playShoot() { beep(880, 0.07, 'square', 0.06); }
-  function playZombieDeath() { beep(180, 0.25, 'sawtooth', 0.09); }
-  function playPickup() { beep(1200, 0.12, 'sine', 0.1); }
-  function playLevelUp() { beep(660, 0.15, 'square', 0.1); setTimeout(() => beep(990, 0.2, 'square', 0.1), 120); }
+  function playShoot()       { beep(880, 0.06, 'square', 0.05); }
+  function playZombieDeath() { beep(180, 0.22, 'sawtooth', 0.08); }
+  function playPickup()      { beep(1200, 0.12, 'sine', 0.1); }
+  function playLevelUp()     { beep(660, 0.15, 'square', 0.09); setTimeout(() => beep(990, 0.2, 'square', 0.09), 120); }
+  function playBuff()        { beep(760, 0.1, 'square', 0.09); setTimeout(() => beep(1140, 0.18, 'square', 0.09), 100); }
 
-  // ========== 粒子 ==========
+  /* =========================================================
+     粒子 & 飘字
+  ========================================================= */
   function spawnParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -604,21 +531,37 @@
     }
   }
 
-  // ========== 初始化游戏 ==========
+  function spawnFloatText(x, y, text, color) {
+    floatTexts.push({
+      x, y,
+      text: text,
+      color: color || '#ffcf5c',
+      life: 1,
+      vy: -0.9        // 向上飘动
+    });
+  }
+
+  /* =========================================================
+     游戏初始化 / 重置
+  ========================================================= */
   function resetGame() {
-    running = true;                       // ← 关键：写对
+    running = true;
     gameTime = 0;
     spawnTimer = 0;
     spawnInterval = 1200;
     kills = 0;
     level = 1;
     speedMultiplier = 1;
+
     zombies = [];
     bullets = [];
     drops = [];
     particles = [];
+    floatTexts = [];
+
     shotCd = 0;
-    shotgunTimer = 0;
+    weaponBuffTimer = 0;
+    speedBuffTimer = 0;
     aimAngle = 0;
     mouseX = W / 2; mouseY = H / 2;
 
@@ -626,7 +569,7 @@
       x: W / 2,
       y: H / 2,
       radius: 18,
-      speed: 4.5,
+      speed: BASE_SPEED,
       hp: 100,
       maxHp: 100
     };
@@ -655,16 +598,34 @@
     levelDisplay.textContent = 'LV.' + level;
     const pct = Math.max(0, player ? player.hp / player.maxHp * 100 : 0);
     hpBarFill.style.width = pct + '%';
+
+    // 增益状态 UI
+    if (weaponBuffTimer > 0) {
+      buffWeaponEl.style.display = 'block';
+      buffWeaponEl.textContent = '🌟 三发散射 ' + Math.ceil(weaponBuffTimer / 1000) + 's';
+    } else {
+      buffWeaponEl.style.display = 'none';
+    }
+    if (speedBuffTimer > 0) {
+      buffSpeedEl.style.display = 'block';
+      buffSpeedEl.textContent = '⚡ 加速 ' + Math.ceil(speedBuffTimer / 1000) + 's';
+    } else {
+      buffSpeedEl.style.display = 'none';
+    }
   }
 
-  // ========== 键盘 ==========
+  /* =========================================================
+     输入：键盘
+  ========================================================= */
   window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-  // ========== 鼠标 ==========
+  /* =========================================================
+     输入：鼠标
+  ========================================================= */
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
     mouseX = (e.clientX - r.left) / r.width * W;
@@ -680,7 +641,9 @@
     tryShoot();
   });
 
-  // ========== 触摸摇杆 ==========
+  /* =========================================================
+     输入：触摸摇杆
+  ========================================================= */
   function updateJoystickFromTouch(t) {
     const r = joystick.getBoundingClientRect();
     const cx = r.left + r.width / 2;
@@ -731,7 +694,9 @@
   joystick.addEventListener('touchend', endJoy);
   joystick.addEventListener('touchcancel', endJoy);
 
-  // ========== 触摸射击键 ==========
+  /* =========================================================
+     输入：触摸射击键
+  ========================================================= */
   fireButton.addEventListener('touchstart', e => {
     e.preventDefault();
     initAudio();
@@ -749,12 +714,12 @@
     }
   }, { passive: false });
 
-  fireButton.addEventListener('touchcancel', e => {
+  fireButton.addEventListener('touchcancel', () => {
     fireId = null;
     fireActive = false;
   });
 
-  // 阻止页面滑动
+  // 阻止页面滑动（关键防卡死）
   document.addEventListener('touchmove', e => {
     if (e.target === canvas || e.target === joystick || e.target === fireButton ||
         joystick.contains(e.target) || fireButton.contains(e.target)) {
@@ -764,11 +729,16 @@
 
   canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
-  // ========== 射击 ==========
+  /* =========================================================
+     射击
+  ========================================================= */
   function tryShoot() {
     if (!player || shotCd > 0) return;
-    shotCd = SHOT_CD;
 
+    const upgraded = weaponBuffTimer > 0;
+    shotCd = upgraded ? SHOT_CD_BUFF : SHOT_CD;
+
+    // 自动瞄准最近丧尸
     let target = null, minDist = Infinity;
     for (const z of zombies) {
       const d = Math.hypot(z.x - player.x, z.y - player.y);
@@ -778,10 +748,8 @@
       aimAngle = Math.atan2(target.y - player.y, target.x - player.x);
     }
 
-    const isShotgun = shotgunTimer > 0;
-    const angles = isShotgun
-      ? [-0.35, -0.175, 0, 0.175, 0.35]
-      : [0];
+    // 武器升级：三发散射；否则单发
+    const angles = upgraded ? [-0.22, 0, 0.22] : [0];
 
     for (const off of angles) {
       const a = aimAngle + off;
@@ -790,21 +758,27 @@
         y: player.y,
         vx: Math.cos(a) * 11,
         vy: Math.sin(a) * 11,
-        radius: isShotgun ? 3 : 3.5,
-        life: 1,
-        dmg: 1
+        radius: 3.5,
+        life: 1
       });
     }
     playShoot();
   }
 
-  // ========== 掉落 ==========
+  /* =========================================================
+     道具掉落
+  ========================================================= */
   function tryDrop(x, y) {
-    if (Math.random() < 0.2) {
-      const type = Math.random() < 0.6 ? 'health' : 'shotgun';
+    if (Math.random() < 0.15) {                 // 15% 概率
+      const r = Math.random();
+      let type;
+      if (r < 0.4)       type = 'heart';         // ❤️ 加血
+      else if (r < 0.7)  type = 'lightning';     // ⚡ 加速
+      else               type = 'star';          // 🌟 武器升级
+
       drops.push({
         x, y,
-        radius: 14,
+        radius: 15,
         type,
         life: 12,
         bob: 0
@@ -812,32 +786,74 @@
     }
   }
 
-  // ========== 更新 ==========
+  const DROP_EMOJI = { heart: '❤️', lightning: '⚡', star: '🌟' };
+  const DROP_COLOR = { heart: '#ff2f5e', lightning: '#00e5ff', star: '#ffcf5c' };
+
+  /* =========================================================
+     拾取处理
+  ========================================================= */
+  function pickupDrop(d) {
+    if (d.type === 'heart') {
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + 30);
+      const gained = Math.round(player.hp - before);
+      spawnFloatText(d.x, d.y, '+' + gained + ' 生命', '#ff5e9e');
+      beep(880, 0.15, 'sine', 0.1);
+    } else if (d.type === 'lightning') {
+      speedBuffTimer = SPEED_BUFF_DUR;
+      spawnFloatText(d.x, d.y, '⚡ 加速！', '#00e5ff');
+      playBuff();
+    } else if (d.type === 'star') {
+      weaponBuffTimer = WEAPON_BUFF_DUR;
+      spawnFloatText(d.x, d.y, '武器升级！三发散射', '#ffcf5c');
+      playBuff();
+    }
+    spawnParticles(d.x, d.y, DROP_COLOR[d.type], 10);
+    playPickup();
+    updateHUD();
+  }
+
+  /* =========================================================
+     更新逻辑
+  ========================================================= */
   function update(dt) {
     if (!running) return;
 
     gameTime += dt;
     if (shotCd > 0) shotCd -= dt;
-    if (shotgunTimer > 0) shotgunTimer -= dt;
 
+    // 增益倒计时
+    let buffChanged = false;
+    if (weaponBuffTimer > 0) {
+      weaponBuffTimer -= dt;
+      if (weaponBuffTimer <= 0) { weaponBuffTimer = 0; buffChanged = true; }
+    }
+    if (speedBuffTimer > 0) {
+      speedBuffTimer -= dt;
+      if (speedBuffTimer <= 0) { speedBuffTimer = 0; buffChanged = true; }
+    }
+    if (buffChanged) updateHUD();
+
+    // 玩家速度（含加速）
+    player.speed = speedBuffTimer > 0 ? BASE_SPEED * SPEED_BUFF_MUL : BASE_SPEED;
+
+    // 生成丧尸
     spawnTimer += dt;
     if (spawnTimer >= spawnInterval) {
       spawnTimer = 0;
       spawnZombie();
     }
-
     spawnInterval = Math.max(400, 1200 - Math.floor(gameTime / 15000) * 150);
 
     // 玩家移动
     let mx = 0, my = 0;
-    if (keys['w'] || keys['arrowup']) my -= 1;
-    if (keys['s'] || keys['arrowdown']) my += 1;
-    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['w'] || keys['arrowup'])    my -= 1;
+    if (keys['s'] || keys['arrowdown'])  my += 1;
+    if (keys['a'] || keys['arrowleft'])  mx -= 1;
     if (keys['d'] || keys['arrowright']) mx += 1;
 
     if (joyId !== null || Math.abs(joyX) > 0.01 || Math.abs(joyY) > 0.01) {
-      mx = joyX;
-      my = joyY;
+      mx = joyX; my = joyY;
     }
 
     const mlen = Math.hypot(mx, my);
@@ -850,9 +866,10 @@
     player.x = Math.max(player.radius, Math.min(W - player.radius, player.x));
     player.y = Math.max(player.radius, Math.min(H - player.radius, player.y));
 
+    // 触摸射击（按住连发）
     if (fireActive) tryShoot();
 
-    // 子弹
+    // 子弹移动
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx;
@@ -863,7 +880,7 @@
       }
     }
 
-    // 丧尸
+    // 丧尸追踪 & 碰撞玩家
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const dx = player.x - z.x;
@@ -875,15 +892,17 @@
       if (dist < z.radius + player.radius) {
         player.hp -= 0.6;
         spawnParticles(z.x, z.y, '#ff2f5e', 2);
+        updateHUD();
         if (player.hp <= 0) {
           player.hp = 0;
+          updateHUD();
           gameOver();
           return;
         }
       }
     }
 
-    // 子弹碰撞
+    // 子弹 ↔ 丧尸
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       for (let j = zombies.length - 1; j >= 0; j--) {
@@ -896,7 +915,7 @@
           playZombieDeath();
           kills++;
           tryDrop(z.x, z.y);
-          if (kills % 10 === 
+
           if (kills % 10 === 0) {
             level++;
             speedMultiplier += 0.25;
@@ -909,22 +928,15 @@
       }
     }
 
-    // 掉落物
+    // 道具（碰到自动拾取）
     for (let i = drops.length - 1; i >= 0; i--) {
       const d = drops[i];
       d.life -= dt / 1000;
-      d.bob += 0.1;
+      d.bob += 0.12;
       const dist = Math.hypot(player.x - d.x, player.y - d.y);
       if (dist < player.radius + d.radius) {
-        if (d.type === 'health') {
-          player.hp = Math.min(player.maxHp, player.hp + 30);
-        } else {
-          shotgunTimer = SHOTGUN_DUR;
-        }
-        playPickup();
-        spawnParticles(d.x, d.y, d.type === 'health' ? '#ff5e9e' : '#ffaa00', 8);
+        pickupDrop
         drops.splice(i, 1);
-        updateHUD();
         continue;
       }
       if (d.life <= 0) drops.splice(i, 1);
@@ -940,9 +952,20 @@
       p.life -= 0.03;
       if (p.life <= 0) particles.splice(i, 1);
     }
+
+    // 飘字（向上 + 淡出）
+    for (let i = floatTexts.length - 1; i >= 0; i--) {
+      const f = floatTexts[i];
+      f.y += f.vy;
+      f.vy *= 0.985;
+      f.life -= 0.016;
+      if (f.life <= 0) floatTexts.splice(i, 1);
+    }
   }
 
-  // ========== 绘制 ==========
+  /* =========================================================
+     绘制
+  ========================================================= */
   function drawGrid() {
     ctx.fillStyle = '#0a0e18';
     ctx.fillRect(0, 0, W, H);
@@ -951,14 +974,8 @@
     ctx.lineWidth = 1;
     const gridSize = 50;
     ctx.beginPath();
-    for (let x = 0; x <= W; x += gridSize) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-    }
-    for (let y = 0; y <= H; y += gridSize) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-    }
+    for (let x = 0; x <= W; x += gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = 0; y <= H; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
     ctx.stroke();
 
     const grad = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, Math.max(W, H) * 0.75);
@@ -970,12 +987,33 @@
 
   function drawPlayer() {
     if (!player) return;
-    const g = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, player.radius * 2.2);
-    g.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
-    g.addColorStop(1, 'rgba(0, 229, 255, 0)');
+    // 加速时脚下青色光环
+    if (speedBuffTimer > 0) {
+      const g2 = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, player.radius * 2.6);
+      g2.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
+      g2.addColorStop(1, 'rgba(0, 229, 255, 0)');
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // 武器升级时金色光环
+    if (weaponBuffTimer > 0) {
+      const g3 = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, player.radius * 2.1);
+      g3.addColorStop(0, 'rgba(255, 207, 92, 0.35)');
+      g3.addColorStop(1, 'rgba(255, 207, 92, 0)');
+      ctx.fillStyle = g3;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 2.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // 基础光环
+    const g = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, player.radius * 1.8);
+    g.addColorStop(0, 'rgba(0, 255, 200, 0.25)');
+    g.addColorStop(1, 'rgba(0, 255, 200, 0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius * 2.2, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, player.radius * 1.8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.font = '28px serif';
@@ -1019,32 +1057,66 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const d of drops) {
-      const bobY = Math.sin(d.bob) * 3;
-      const col = d.type === 'health' ? 'rgba(255, 94, 158, 0.5)' : 'rgba(255, 170, 0, 0.5)';
+      const bobY = Math.sin(d.bob) * 4;
+      const col = DROP_COLOR[d.type];
+      // 外发光
       ctx.save();
       ctx.shadowColor = col;
-      ctx.shadowBlur = 16;
-      ctx.fillText(d.type === 'health' ? '💊' : '🔥', d.x, d.y + bobY);
+      ctx.shadowBlur = 18;
+      ctx.fillText(DROP_EMOJI[d.type], d.x, d.y + bobY);
+      ctx.restore();
+
+      // 剩余时间细圈
+      const lifePct = Math.max(0, Math.min(1, d.life / 12));
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.radius + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * lifePct);
+      ctx.stroke();
       ctx.restore();
     }
   }
 
   function drawParticles() {
     for (const p of particles) {
-      ctx.globalAlpha = p.life;
+      ctx.globalAlpha = Math.max(0, p.life);
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.size * Math.max(0, p.life), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+  }
+
+  function drawFloatTexts() {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const f of floatTexts) {
+      const alpha = Math.max(0, Math.min(1, f.life));
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 15px monospace';
+      ctx.shadowColor = f.color;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+
+      // 描边增强可读性
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(0,0,0,' + alpha + ')';
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.restore();
+    }
   }
 
   function drawCrosshair() {
     if (!player) return;
     if (!isTouch) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)';
       ctx.lineWidth = 1;
       ctx.setLineDash([5, 8]);
       ctx.beginPath();
@@ -1062,19 +1134,6 @@
     ctx.restore();
   }
 
-  function drawShotgunIndicator() {
-    if (shotgunTimer > 0) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 170, 0, 0.85)';
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.shadowColor = '#ffaa00';
-      ctx.shadowBlur = 12;
-      ctx.fillText('散弹枪 ' + Math.ceil(shotgunTimer / 1000) + 's', W / 2, 22);
-      ctx.restore();
-    }
-  }
-
   function render() {
     drawGrid();
     drawDrops();
@@ -1082,11 +1141,13 @@
     drawBullets();
     drawPlayer();
     drawParticles();
+    drawFloatTexts();
     drawCrosshair();
-    drawShotgunIndicator();
   }
 
-  // ========== 游戏结束 ==========
+  /* =========================================================
+     游戏结束
+  ========================================================= */
   function gameOver() {
     running = false;
 
@@ -1096,7 +1157,7 @@
       highScore = score;
       try { localStorage.setItem(HS_KEY, String(highScore)); } catch (e) {}
     }
-    updateHighScoreUI();
+    hudHighScore.textContent = highScore;
 
     finalScore.textContent = score;
     finalHighScore.textContent = highScore;
@@ -1105,85 +1166,41 @@
     gameOverScreen.classList.add('active');
   }
 
-  // ========== 主循环 ==========
+  /* =========================================================
+     主循环
+  ========================================================= */
   function loop(now) {
     requestAnimationFrame(loop);
     if (!lastTime) lastTime = now;
     let dt = now - lastTime;
     lastTime = now;
-    if (dt > 100) dt = 100;
+    if (dt > 100) dt = 100;      // 防止后台切回时逻辑爆炸
 
-    if (running) {
-      update(dt);
-    }
+    if (running) update(dt);
     render();
   }
 
-  // ========== 启动 / 重启（修复重点） ==========
-  let startLock = false;
-
-  function hideWelcome() {
-    // 双保险：既加 class，也直接设内联 style
-    welcomeScreen.classList.add('hidden');
-    welcomeScreen.style.display = 'none';
-  }
-
-  function showWelcome() {
-    welcomeScreen.classList.remove('hidden');
-    welcomeScreen.style.display = '';   // 恢复 CSS 默认 flex
-  }
-
-  function startGame() {
-    if (startLock) return;   // 防重复触发
-    startLock = true;
-
-    initAudio();
-    hideWelcome();
-    gameOverScreen.classList.remove('active');
-
-    resetGame();             // ← 内部将 running = true
-
-    // 下一帧解锁，防止 click / touchend 重复触发
-    setTimeout(() => { startLock = false; }, 300);
-  }
-
+  /* =========================================================
+     重开（仅结束界面用）
+  ========================================================= */
+  let restartLock = false;
   function restartGame() {
-    if (startLock) return;
-    startLock = true;
-
+    if (restartLock) return;
+    restartLock = true;
     gameOverScreen.classList.remove('active');
     resetGame();
-
-    setTimeout(() => { startLock = false; }, 300);
+    setTimeout(() => { restartLock = false; }, 300);
   }
 
-  // 统一事件绑定：click + touchend（touchend 手动触发一次，防止某些浏览器 click 丢失）
-  startBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    startGame();
-  });
+  restartBtn.addEventListener('click', e => { e.preventDefault(); restartGame(); });
+  restartBtn.addEventListener('touchend', e => { e.preventDefault(); restartGame(); }, { passive: false });
 
-  startBtn.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    startGame();
-  }, { passive: false });
-
-  restartBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    restartGame();
-  });
-
-  restartBtn.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    restartGame();
-  }, { passive: false });
-
-  // 初始：显示欢迎界面，渲染一张静态背景
-  resetGame();          // 先把游戏数据初始化好（此时 running=true，需要立刻置回 false）
-  running = false;      // 停在欢迎界面不跑逻辑
+  /* =========================================================
+     启动！
+     没有欢迎界面，脚本加载完成即开始游戏
+  ========================================================= */
+  resetGame();                 // 内部 running = true
   updateHUD();
-  render();
-
   requestAnimationFrame(loop);
 })();
 </script>
